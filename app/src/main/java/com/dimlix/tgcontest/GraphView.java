@@ -12,7 +12,10 @@ import android.view.View;
 
 public class GraphView extends View {
 
-    private static final int MAX = 10000;
+    private static final int MAX = 100;
+    private static final int ANIM_DURATION = 400;
+    private static final long DELAY_60_FPS = 16; // 16 ms
+    private static final float SHIFT_FOR_ANIM_DELAY = (float) DELAY_60_FPS / ANIM_DURATION;
 
     private int[] mDataY = new int[MAX];
 
@@ -20,6 +23,16 @@ public class GraphView extends View {
 
     private Path mPath = new Path();
     private Paint mPathPaint = new Paint();
+
+    private float mDelafyFor60FPS = (float) 1000 / 60;
+
+    private float mDesiredXStep;
+    private float mDesiredYStep;
+    private float mCurrentXStep = 0;
+    private float mCurrentYStep = 0;
+    private float mMaxYValueforSelectedRegion = 0;
+
+    private long mStartTime = 0;
 
     public GraphView(Context context) {
         super(context);
@@ -42,28 +55,47 @@ public class GraphView extends View {
 
     @Override
     protected void onDraw(Canvas canvas) {
-        int maxYValue = 0;
-        for (int i = 0; i < mVisibleRegionXMax; i++) {
-            if (maxYValue < mDataY[i]) maxYValue = mDataY[i];
-        }
-
-        float xStep = (float) getWidth() / mVisibleRegionXMax;
-        float yStep = (float) getHeight() / maxYValue;
-
         mPath.reset();
-        mPath.moveTo(0, mDataY[0] * yStep);
+        mPath.moveTo(0, mDataY[0] * mCurrentYStep);
         int i = 1;
-        float xVal = i * xStep;
+        float xVal = i * mCurrentXStep;
         while (i < MAX && xVal < getWidth()) {
-            xVal = i * xStep;
-            float yVal = getHeight() - mDataY[i] * yStep;
-            mPath.lineTo(i * xStep, getHeight() - mDataY[i] * yStep);
+            xVal = i * mCurrentXStep;
+            mPath.lineTo(i * mCurrentXStep, getHeight() - mDataY[i] * mCurrentYStep);
             i++;
         }
         canvas.drawPath(mPath, mPathPaint);
+        float elapsedAnim = System.currentTimeMillis() - mStartTime;
+        if (elapsedAnim < ANIM_DURATION) {
+            float progress = elapsedAnim / ANIM_DURATION;
+            mCurrentXStep = mCurrentXStep + (mDesiredXStep - mCurrentXStep) * progress;
+            mCurrentYStep = mCurrentYStep + (mDesiredYStep - mCurrentYStep) * progress;
+            Log.e("!@#", "com.dimlix.tgcontest.GraphView.onDraw:70 " + progress);
+            invalidate();
+        } else {
+            mCurrentXStep = mDesiredXStep;
+            mCurrentYStep = mDesiredYStep;
+            invalidate();
+            if (mCurrentXStep == mDesiredXStep && mCurrentYStep == mDesiredYStep) return;
+        }
     }
 
     public void setMaxVisibleRegion(int xMax) {
+        mStartTime = System.currentTimeMillis();
+        for (int i = 0; i < mVisibleRegionXMax; i++) {
+            if (mMaxYValueforSelectedRegion < mDataY[i]) mMaxYValueforSelectedRegion = mDataY[i];
+        }
+
+        mDesiredXStep = (float) getWidth() / mVisibleRegionXMax;
+        mDesiredYStep = (float) getHeight() / mMaxYValueforSelectedRegion;
+
+        if (mCurrentXStep == 0) {
+            mCurrentXStep = mDesiredXStep;
+        }
+        if (mCurrentYStep == 0) {
+            mCurrentYStep = mDesiredYStep;
+        }
+
         mVisibleRegionXMax = xMax;
         invalidate();
     }
