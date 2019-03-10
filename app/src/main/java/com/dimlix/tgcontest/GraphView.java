@@ -12,27 +12,23 @@ import android.view.View;
 
 public class GraphView extends View {
 
-    private static final int MAX = 100;
-    private static final int ANIM_DURATION = 400;
+    private static final int SET_SIZE = 10;
+    private static final int ANIM_DURATION_FOR_100_PERCENT = 10000;
     private static final long DELAY_60_FPS = 16; // 16 ms
-    private static final float SHIFT_FOR_ANIM_DELAY = (float) DELAY_60_FPS / ANIM_DURATION;
 
-    private int[] mDataY = new int[MAX];
-
-    private int mVisibleRegionXMax = MAX;
+    private int[] mDataY = new int[SET_SIZE];
 
     private Path mPath = new Path();
     private Paint mPathPaint = new Paint();
-
-    private float mDelafyFor60FPS = (float) 1000 / 60;
 
     private float mDesiredXStep;
     private float mDesiredYStep;
     private float mCurrentXStep = 0;
     private float mCurrentYStep = 0;
-    private float mMaxYValueforSelectedRegion = 0;
 
     private long mStartTime = 0;
+
+    private int mCalcAnimDuration = 0;
 
     public GraphView(Context context) {
         super(context);
@@ -45,7 +41,7 @@ public class GraphView extends View {
     }
 
     private void init() {
-        for (int i = 0; i < MAX; i++) {
+        for (int i = 0; i < SET_SIZE; i++) {
             mDataY[i] = (int) (Math.random() * 200);
         }
         mPathPaint.setColor(Color.RED);
@@ -59,34 +55,44 @@ public class GraphView extends View {
         mPath.moveTo(0, mDataY[0] * mCurrentYStep);
         int i = 1;
         float xVal = i * mCurrentXStep;
-        while (i < MAX && xVal < getWidth()) {
+        while (i < SET_SIZE && xVal < getWidth()) {
             xVal = i * mCurrentXStep;
             mPath.lineTo(i * mCurrentXStep, getHeight() - mDataY[i] * mCurrentYStep);
             i++;
         }
         canvas.drawPath(mPath, mPathPaint);
         float elapsedAnim = System.currentTimeMillis() - mStartTime;
-        if (elapsedAnim < ANIM_DURATION) {
-            float progress = elapsedAnim / ANIM_DURATION;
+        Log.e("!@#", "Elapsed: " + elapsedAnim);
+        if (elapsedAnim < mCalcAnimDuration
+                && mCurrentXStep != mDesiredXStep
+                && mCurrentYStep != mDesiredYStep) {
+            float progress = elapsedAnim / mCalcAnimDuration;
+            Log.e("!@#", "progress: " + progress);
             mCurrentXStep = mCurrentXStep + (mDesiredXStep - mCurrentXStep) * progress;
+            Log.e("!@#", "mCurrentXStep: " + mCurrentXStep);
+            Log.e("!@#", "mDesiredXStep: " + mDesiredXStep);
             mCurrentYStep = mCurrentYStep + (mDesiredYStep - mCurrentYStep) * progress;
-            Log.e("!@#", "com.dimlix.tgcontest.GraphView.onDraw:70 " + progress);
-            invalidate();
+            postInvalidateDelayed(DELAY_60_FPS);
         } else {
             mCurrentXStep = mDesiredXStep;
             mCurrentYStep = mDesiredYStep;
-            invalidate();
             if (mCurrentXStep == mDesiredXStep && mCurrentYStep == mDesiredYStep) return;
+            invalidate();
         }
     }
 
-    public void setMaxVisibleRegion(int xMax) {
+    public void setMaxVisibleRegion(int xValueRightRegion) {
+        if (getWidth() == 0) {
+            postInvalidate();
+            return;
+        }
         mStartTime = System.currentTimeMillis();
-        for (int i = 0; i < mVisibleRegionXMax; i++) {
+        float mMaxYValueforSelectedRegion = mDataY[0];
+        for (int i = 1; i < xValueRightRegion; i++) {
             if (mMaxYValueforSelectedRegion < mDataY[i]) mMaxYValueforSelectedRegion = mDataY[i];
         }
 
-        mDesiredXStep = (float) getWidth() / mVisibleRegionXMax;
+        mDesiredXStep = (float) getWidth() / xValueRightRegion;
         mDesiredYStep = (float) getHeight() / mMaxYValueforSelectedRegion;
 
         if (mCurrentXStep == 0) {
@@ -96,7 +102,22 @@ public class GraphView extends View {
             mCurrentYStep = mDesiredYStep;
         }
 
-        mVisibleRegionXMax = xMax;
+        Log.e("!@#", "getWidth " + getWidth());
+        // Max range of values that we should want to animate
+        // From showing only 1 value on graph up to showing all #SET_SIZE points
+        // Switching by this distance must be animated in ANIM_DURATION_FOR_100_PERCENT ms
+        float maxStepDistance = getWidth() - (float) getWidth() / SET_SIZE;
+        // Diff between desired and current steps size to compute animation with
+        float mStepDiff = Math.abs(mCurrentXStep - mDesiredXStep);
+
+        // Choose what part of total animation should be applied for current desired tranlaction
+        // It is needed to make graph changing speed consistent regardless the desired diff
+        mCalcAnimDuration = (int) (mStepDiff / maxStepDistance * ANIM_DURATION_FOR_100_PERCENT);
+
+        Log.e("!@#", "delta " + mCalcAnimDuration);
+        Log.e("!@#", "animDurationForPart " + mCalcAnimDuration);
+        Log.e("!@#", "mCalcAnim " + mCalcAnimDuration);
+
         invalidate();
     }
 }
