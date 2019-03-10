@@ -12,19 +12,24 @@ import android.view.View;
 
 public class GraphView extends View {
 
-    private static final int SET_SIZE = 10;
-    private static final int ANIM_DURATION_FOR_100_PERCENT = 10000;
-    private static final long DELAY_60_FPS = 16; // 16 ms
+    private static final int SET_SIZE = 100;
+    private static final int DEFAULT_MAX_VALUE = 100;
 
     private int[] mDataY = new int[SET_SIZE];
 
     private Path mPath = new Path();
     private Paint mPathPaint = new Paint();
 
-    private float mDesiredXStep;
-    private float mDesiredYStep;
-    private float mCurrentXStep = 0;
-    private float mCurrentYStep = 0;
+    private int mMaxGrapValue = DEFAULT_MAX_VALUE;
+
+    private float mLeftDesiredXBoarderValue = 0;
+    private float mRightDesiredXBoarderValue = DEFAULT_MAX_VALUE;
+
+    private float mLeftCurrentXBoarderValue = 0;
+    private float mRightCurrentXBoarderValue = DEFAULT_MAX_VALUE;
+
+    private float mStepXForMaxScale;
+
 
     private long mStartTime = 0;
 
@@ -52,72 +57,73 @@ public class GraphView extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         mPath.reset();
-        mPath.moveTo(0, mDataY[0] * mCurrentYStep);
-        int i = 1;
-        float xVal = i * mCurrentXStep;
-        while (i < SET_SIZE && xVal < getWidth()) {
-            xVal = i * mCurrentXStep;
-            mPath.lineTo(i * mCurrentXStep, getHeight() - mDataY[i] * mCurrentYStep);
-            i++;
+
+        float scale = (float) getWidth() / (mRightCurrentXBoarderValue - mLeftCurrentXBoarderValue);
+        float translation = mLeftCurrentXBoarderValue;
+
+        int firstPointToShow =
+                Math.max((int) Math.floor(mLeftCurrentXBoarderValue / mStepXForMaxScale), 0);
+        int lastPointToShow = Math.min((int) Math.floor(mRightCurrentXBoarderValue / mStepXForMaxScale) + 1,
+                SET_SIZE - 1);
+
+        Log.e("!@#", "firstPointToShow " + firstPointToShow);
+        Log.e("!@#", "lastPointToShow " + lastPointToShow);
+
+        float maxPossibleYever = 0;
+        for (int i = 0; i < SET_SIZE; i++) {
+            if (maxPossibleYever < mDataY[i]) maxPossibleYever = mDataY[i];
         }
+
+        float yStep = getHeight() / maxPossibleYever;
+        mPath.moveTo((firstPointToShow * mStepXForMaxScale - translation) * scale,
+                mDataY[0] * yStep);
+        for (int i = firstPointToShow + 1; i <= lastPointToShow; i++) {
+            mPath.lineTo((i * mStepXForMaxScale - translation) * scale,
+                    mDataY[i] * yStep);
+        }
+
         canvas.drawPath(mPath, mPathPaint);
         float elapsedAnim = System.currentTimeMillis() - mStartTime;
-        Log.e("!@#", "Elapsed: " + elapsedAnim);
-        if (elapsedAnim < mCalcAnimDuration
-                && mCurrentXStep != mDesiredXStep
-                && mCurrentYStep != mDesiredYStep) {
+        if (elapsedAnim < mCalcAnimDuration) {
             float progress = elapsedAnim / mCalcAnimDuration;
-            Log.e("!@#", "progress: " + progress);
-            mCurrentXStep = mCurrentXStep + (mDesiredXStep - mCurrentXStep) * progress;
-            Log.e("!@#", "mCurrentXStep: " + mCurrentXStep);
-            Log.e("!@#", "mDesiredXStep: " + mDesiredXStep);
-            mCurrentYStep = mCurrentYStep + (mDesiredYStep - mCurrentYStep) * progress;
-            postInvalidateDelayed(DELAY_60_FPS);
+
         } else {
-            mCurrentXStep = mDesiredXStep;
-            mCurrentYStep = mDesiredYStep;
-            if (mCurrentXStep == mDesiredXStep && mCurrentYStep == mDesiredYStep) return;
-            invalidate();
+
         }
     }
 
-    public void setMaxVisibleRegion(int xValueRightRegion) {
+    /**
+     * We assume that whole seekbar graph is descrete from 0 to {@link #mMaxGrapValue}.
+     * User can't stop it's scroll on e.g. 0.5 point, from 0 graph will jump to 1 directly.
+     * Like seekbar - when dev. set max to 2, there is 3 point {0,1,2} and user can't stop at any
+     * other value.
+     *
+     * @param xValueRightRegion Value from [0..{@link #mMaxGrapValue}] - right border of selected region
+     * @param xValueLeftRegion Value from [0..{@link #mMaxGrapValue}] - left border of selected region
+     */
+    public void setMaxVisibleRegionPercent(int xValueLeftRegion, int xValueRightRegion) {
         if (getWidth() == 0) {
             postInvalidate();
             return;
         }
+
+        mStepXForMaxScale = (float) getWidth() / (SET_SIZE - 1);
         mStartTime = System.currentTimeMillis();
-        float mMaxYValueforSelectedRegion = mDataY[0];
-        for (int i = 1; i < xValueRightRegion; i++) {
-            if (mMaxYValueforSelectedRegion < mDataY[i]) mMaxYValueforSelectedRegion = mDataY[i];
-        }
 
-        mDesiredXStep = (float) getWidth() / xValueRightRegion;
-        mDesiredYStep = (float) getHeight() / mMaxYValueforSelectedRegion;
-
-        if (mCurrentXStep == 0) {
-            mCurrentXStep = mDesiredXStep;
-        }
-        if (mCurrentYStep == 0) {
-            mCurrentYStep = mDesiredYStep;
-        }
-
-        Log.e("!@#", "getWidth " + getWidth());
-        // Max range of values that we should want to animate
-        // From showing only 1 value on graph up to showing all #SET_SIZE points
-        // Switching by this distance must be animated in ANIM_DURATION_FOR_100_PERCENT ms
-        float maxStepDistance = getWidth() - (float) getWidth() / SET_SIZE;
-        // Diff between desired and current steps size to compute animation with
-        float mStepDiff = Math.abs(mCurrentXStep - mDesiredXStep);
-
-        // Choose what part of total animation should be applied for current desired tranlaction
-        // It is needed to make graph changing speed consistent regardless the desired diff
-        mCalcAnimDuration = (int) (mStepDiff / maxStepDistance * ANIM_DURATION_FOR_100_PERCENT);
-
-        Log.e("!@#", "delta " + mCalcAnimDuration);
-        Log.e("!@#", "animDurationForPart " + mCalcAnimDuration);
-        Log.e("!@#", "mCalcAnim " + mCalcAnimDuration);
+        mLeftCurrentXBoarderValue = xValueLeftRegion;
+        mRightCurrentXBoarderValue = (float) xValueRightRegion / mMaxGrapValue * getWidth();
 
         invalidate();
+    }
+
+    public int getmMaxGrapValue() {
+        return mMaxGrapValue;
+    }
+
+    /**
+     * Like in seekbar define the max available progress.
+     */
+    public void setmMaxGrapValue(int mMaxGrapValue) {
+        this.mMaxGrapValue = mMaxGrapValue;
     }
 }
