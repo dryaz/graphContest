@@ -12,8 +12,9 @@ import android.view.View;
 
 public class GraphView extends View {
 
-    private static final int SET_SIZE = 100;
+    private static final int SET_SIZE = 10;
     private static final int DEFAULT_MAX_VALUE = 100;
+    private static final int ANIMATION_DURATION = 500;
 
     private int[] mDataY = new int[SET_SIZE];
 
@@ -27,6 +28,9 @@ public class GraphView extends View {
 
     private float mLeftCurrentXBoarderValue = 0;
     private float mRightCurrentXBoarderValue = DEFAULT_MAX_VALUE;
+
+    private float mLeftLastSetXBoarderValue = 0;
+    private float mRightLastSetXBoarderValue = DEFAULT_MAX_VALUE;
 
     private float mStepXForMaxScale;
 
@@ -53,6 +57,9 @@ public class GraphView extends View {
         mPathPaint.setStyle(Paint.Style.STROKE);
         mPathPaint.setStrokeWidth(2);
     }
+
+    private float lastProgress = 0;
+    private float lastRightValue = 0;
 
     @Override
     protected void onDraw(Canvas canvas) {
@@ -86,10 +93,28 @@ public class GraphView extends View {
         float elapsedAnim = System.currentTimeMillis() - mStartTime;
         if (elapsedAnim < mCalcAnimDuration) {
             float progress = elapsedAnim / mCalcAnimDuration;
-
+            mLeftCurrentXBoarderValue = mLeftLastSetXBoarderValue + (mLeftDesiredXBoarderValue - mLeftLastSetXBoarderValue) * progress;
+            mRightCurrentXBoarderValue = mRightLastSetXBoarderValue + (mRightDesiredXBoarderValue - mRightLastSetXBoarderValue) * progress;
+            Log.e("!@#1", "progress: " + progress);
+            Log.e("!@#1", "progress DIFF: " + (progress - lastProgress));
+            lastProgress = progress;
+            invalidate();
         } else {
-
+            if (mLeftCurrentXBoarderValue == mLeftDesiredXBoarderValue
+                    && mRightCurrentXBoarderValue == mRightDesiredXBoarderValue) {
+                mLeftLastSetXBoarderValue = mLeftDesiredXBoarderValue;
+                mRightLastSetXBoarderValue = mRightDesiredXBoarderValue;
+                return;
+            } else {
+                mLeftCurrentXBoarderValue = mLeftDesiredXBoarderValue;
+                mRightCurrentXBoarderValue = mRightDesiredXBoarderValue;
+                invalidate();
+            }
         }
+        Log.e("!@#", "mLeftCurrentXBoarderValue: " + mLeftCurrentXBoarderValue);
+        Log.e("!@#1", "mRightCurrentXBoarderValue: " + mRightCurrentXBoarderValue);
+        Log.e("!@#1", "mRightCurrentXBoarderValue diff: " + (mRightCurrentXBoarderValue - lastRightValue));
+        lastRightValue = mRightCurrentXBoarderValue;
     }
 
     /**
@@ -99,7 +124,7 @@ public class GraphView extends View {
      * other value.
      *
      * @param xValueRightRegion Value from [0..{@link #mMaxGrapValue}] - right border of selected region
-     * @param xValueLeftRegion Value from [0..{@link #mMaxGrapValue}] - left border of selected region
+     * @param xValueLeftRegion  Value from [0..{@link #mMaxGrapValue}] - left border of selected region
      */
     public void setMaxVisibleRegionPercent(int xValueLeftRegion, int xValueRightRegion) {
         if (getWidth() == 0) {
@@ -110,8 +135,31 @@ public class GraphView extends View {
         mStepXForMaxScale = (float) getWidth() / (SET_SIZE - 1);
         mStartTime = System.currentTimeMillis();
 
-        mLeftCurrentXBoarderValue = xValueLeftRegion;
-        mRightCurrentXBoarderValue = (float) xValueRightRegion / mMaxGrapValue * getWidth();
+        mLeftDesiredXBoarderValue = xValueLeftRegion;
+        mRightDesiredXBoarderValue = (float) xValueRightRegion / mMaxGrapValue * getWidth();
+
+        if (mLeftCurrentXBoarderValue == 0) {
+            mLeftCurrentXBoarderValue = mLeftDesiredXBoarderValue;
+        }
+
+        if (mRightCurrentXBoarderValue == 0) {
+            mRightCurrentXBoarderValue = mRightDesiredXBoarderValue;
+        }
+
+        mLeftLastSetXBoarderValue = mLeftCurrentXBoarderValue;
+        mRightLastSetXBoarderValue = mRightCurrentXBoarderValue;
+
+        // TODO compute how long animation should be to keep consistent speed
+        float currentWidth = Math.abs(mLeftCurrentXBoarderValue - mRightCurrentXBoarderValue);
+        float desiredWidth = Math.abs(mLeftDesiredXBoarderValue - mRightDesiredXBoarderValue);
+        float diffWidth = Math.abs(currentWidth - desiredWidth);
+        if (diffWidth > 3 * getWidth() / mMaxGrapValue) {
+            mCalcAnimDuration = (int) (diffWidth * ANIMATION_DURATION / getWidth());
+        } else {
+            mCalcAnimDuration = 0;
+        }
+        Log.e("!@#", "diff widht: " + diffWidth);
+        Log.e("!@#", "mCalcAnimDuration " + mCalcAnimDuration);
 
         invalidate();
     }
