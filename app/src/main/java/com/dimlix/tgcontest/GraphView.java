@@ -97,14 +97,14 @@ public class GraphView extends View {
         invalidate();
     }
 
-    public int getmMaxGrapValue() {
+    public int getMaxGrapValue() {
         return mMaxGrapValue;
     }
 
     /**
      * Like in seekbar define the max available progress.
      */
-    public void setmMaxGrapValue(int mMaxGrapValue) {
+    public void setMaxGrapValue(int mMaxGrapValue) {
         this.mMaxGrapValue = mMaxGrapValue;
     }
 }

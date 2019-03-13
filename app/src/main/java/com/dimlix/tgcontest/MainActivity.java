@@ -7,6 +7,9 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.SeekBar;
 
+import java.io.IOException;
+import java.io.InputStream;
+
 public class MainActivity extends AppCompatActivity {
 
     private int curProgress = 1;
@@ -62,5 +65,23 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
+
+        Log.e("!@#", new JsonGraphReader().getGraphDataFromJson(loadGraphJSONFromAsset()).toString());
+    }
+
+    public String loadGraphJSONFromAsset() {
+        String json = null;
+        try {
+            InputStream is = getAssets().open("chart_data.json");
+            int size = is.available();
+            byte[] buffer = new byte[size];
+            is.read(buffer);
+            is.close();
+            json = new String(buffer, "UTF-8");
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            return null;
+        }
+        return json;
     }
 }
