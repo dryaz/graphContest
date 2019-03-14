@@ -31,6 +31,10 @@ public class ChartData {
                 '}';
     }
 
+    public int getSize() {
+        return mXValues.size();
+    }
+
     public static class YData {
         private String mVarName;
         private String mAlias;
@@ -64,6 +68,10 @@ public class ChartData {
 
         public List<Long> getValues() {
             return mValues;
+        }
+
+        public int getSize() {
+            return mValues.size();
         }
 
         @Override

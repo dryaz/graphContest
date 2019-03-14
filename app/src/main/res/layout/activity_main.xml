@@ -1,39 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="vertical"
     tools:context=".MainActivity">
 
-    <com.dimlix.tgcontest.GraphView
-        android:id="@+id/graph"
+    <com.dimlix.tgcontest.chart.ChartLayout
+        android:id="@+id/chartLayout"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_marginBottom="16dp"
-        app:layout_constraintBottom_toTopOf="@id/graphControlView"
-        app:layout_constraintTop_toTopOf="parent" />
+        android:layout_height="400dp" />
 
-    <com.dimlix.tgcontest.GraphControlView
-        android:id="@+id/graphControlView"
-        android:layout_width="match_parent"
-        android:layout_height="100dp"
-        app:layout_constraintBottom_toTopOf="@id/seekXMin" />
-
-    <SeekBar
-        android:id="@+id/seekXMin"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
-        android:max="10000"
-        app:layout_constraintBottom_toTopOf="@id/seekXMax" />
-
-    <SeekBar
-        android:id="@+id/seekXMax"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
-        android:max="10000"
-        app:layout_constraintBottom_toBottomOf="parent" />
-
-</android.support.constraint.ConstraintLayout>
+</LinearLayout>

@@ -3,9 +3,11 @@ package com.dimlix.tgcontest;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.MotionEvent;
-import android.view.View;
 import android.widget.SeekBar;
+
+import com.dimlix.tgcontest.chart.ChartLayout;
+import com.dimlix.tgcontest.chart.ChartView;
+import com.dimlix.tgcontest.model.GraphData;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -23,50 +25,10 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        SeekBar seekBarMax = findViewById(R.id.seekXMax);
-        SeekBar seekBarMin = findViewById(R.id.seekXMin);
-        final GraphView graphView = findViewById(R.id.graph);
-        graphView.setMaxVisibleRegionPercent(0, mRightBoarder);
-        seekBarMax.setProgress(mRightBoarder);
-        seekBarMin.setProgress(mLeftBoarder);
+        final ChartLayout chartView = findViewById(R.id.chartLayout);
 
-        seekBarMax.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                mRightBoarder = progress;
-                graphView.setMaxVisibleRegionPercent(mLeftBoarder, mRightBoarder);
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-
-            }
-        });
-
-        seekBarMin.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                mLeftBoarder = progress;
-                graphView.setMaxVisibleRegionPercent(mLeftBoarder, mRightBoarder);
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-
-            }
-        });
-
-        Log.e("!@#", new JsonGraphReader().getGraphDataFromJson(loadGraphJSONFromAsset()).toString());
+        GraphData graphData = new JsonGraphReader().getGraphDataFromJson(loadGraphJSONFromAsset());
+        chartView.setData(graphData.getChartData().get(0));
     }
 
     public String loadGraphJSONFromAsset() {

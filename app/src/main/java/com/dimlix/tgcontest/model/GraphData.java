@@ -10,6 +10,7 @@ public class GraphData {
         return mChartData;
     }
 
+
     public void addChartData(ChartData data) {
         mChartData.add(data);
     }
