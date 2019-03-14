@@ -59,6 +59,7 @@ public class ChartView extends View {
         long maxPossibleYever = 0;
         for (int k = 0; k < mChartData.getYValues().size(); k++) {
             ChartData.YData yData = mChartData.getYValues().get(k);
+            if (!yData.isShown()) continue;
             // Extra iteration over visible fragment needed to find out y scale factor.
             for (int i = firstPointToShow; i < lastPointToShow; i++) {
                 Long nextValue = yData.getValues().get(i);
@@ -69,6 +70,7 @@ public class ChartView extends View {
         for (int k = 0; k < mChartData.getYValues().size(); k++) {
             mPath.reset();
             ChartData.YData yData = mChartData.getYValues().get(k);
+            if (!yData.isShown()) continue;
 
             float yStep = (float) getHeight() / maxPossibleYever;
             mPath.moveTo((firstPointToShow * mStepXForMaxScale - translation) * scale,
@@ -131,6 +133,16 @@ public class ChartView extends View {
 
             mPaints.put(yData.getVarName(), paint);
         }
+        invalidate();
+    }
+
+    /**
+     * Show/hide chart line on chart
+     * @param yVarName name of affected line
+     * @param isShown if line should be shown or not
+     */
+    void onYChartEnabled(String yVarName, boolean isShown) {
+        // TODO animate transition of yVarName
         invalidate();
     }
 }

@@ -41,6 +41,7 @@ public class ChartData {
         private String mType;
         private String mColor;
         private List<Long> mValues;
+        private boolean mIsShown = true;
 
         public YData(String varName, String alias, String type, String color, List<Long> values) {
             mVarName = varName;
@@ -72,6 +73,14 @@ public class ChartData {
 
         public int getSize() {
             return mValues.size();
+        }
+
+        public boolean isShown() {
+            return mIsShown;
+        }
+
+        public void setShown(boolean shown) {
+            mIsShown = shown;
         }
 
         @Override
