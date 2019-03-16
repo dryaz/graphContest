@@ -6,7 +6,6 @@ import android.graphics.Color;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.LinearLayout;
@@ -85,7 +84,7 @@ public class ChartLayout extends LinearLayout implements CompoundButton.OnChecke
                 yData.setShown(isChecked);
             }
         }
-        mChartView.onYChartEnabled(yVarName, isChecked);
-        mChartControlView.onYChartEnabled(yVarName, isChecked);
+        mChartView.onYChartToggled(yVarName);
+        mChartControlView.onYChartToggled(yVarName);
     }
 }
