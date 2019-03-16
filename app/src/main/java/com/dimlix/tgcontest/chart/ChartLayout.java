@@ -41,6 +41,13 @@ public class ChartLayout extends LinearLayout implements CompoundButton.OnChecke
         setOrientation(VERTICAL);
         mChartView = view.findViewById(R.id.chart);
         mChartControlView = view.findViewById(R.id.chartControl);
+
+        mChartControlView.setListener(new ChartControlView.Listener() {
+            @Override
+            public void onBoarderChange(int left, int right) {
+                mChartView.setMaxVisibleRegionPercent(left, right);
+            }
+        });
     }
 
     public void setData(ChartData data) {
@@ -49,8 +56,11 @@ public class ChartLayout extends LinearLayout implements CompoundButton.OnChecke
         mChartView.setChartData(data);
         mChartControlView.setChartData(data);
 
-        mChartView.setMaxVisibleRegionPercent(0, MAX_DISCRETE_PROGRESS / 2);
-        mChartControlView.setMaxVisibleRegionPercent(0, MAX_DISCRETE_PROGRESS);
+        int min = 0;
+        int max = MAX_DISCRETE_PROGRESS;
+        mChartView.setMaxVisibleRegionPercent(min, max);
+
+        mChartControlView.setMinMax(min, max);
 
         for (CheckBox checkBox : mCheckBoxes) {
             checkBox.setOnCheckedChangeListener(null);

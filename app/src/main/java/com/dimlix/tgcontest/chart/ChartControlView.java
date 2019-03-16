@@ -5,19 +5,38 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.support.annotation.IntDef;
+import android.support.annotation.InterpolatorRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.text.method.Touch;
 import android.util.AttributeSet;
+import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
 
+import com.dimlix.tgcontest.R;
 import com.dimlix.tgcontest.model.ChartData;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class ChartControlView extends View {
-
     private static final int TOGGLE_ANIM_DURATION = 300;
+
+    @IntDef({
+            TouchMode.NONE,
+            TouchMode.LEFT_BOARDER,
+            TouchMode.RIGHT_BOARDER,
+            TouchMode.DRAG_REGION,
+    })
+    public @interface TouchMode {
+        int NONE = 0;
+        int LEFT_BOARDER = 1;
+        int RIGHT_BOARDER = 2;
+        int DRAG_REGION = 3;
+
+    }
 
     private Path mPath = new Path();
     private Map<String, Paint> mPaints = new HashMap<>();
@@ -37,12 +56,115 @@ public class ChartControlView extends View {
     // Needs to animate chart when user toggle line/
     private long mLastMaxPossibleYever;
 
+    @Nullable
+    private Listener mListener;
+
+    private int mMinPos = 0;
+    private int mMaxPos = ChartLayout.MAX_DISCRETE_PROGRESS;
+
+    private Paint mMaskPaint;
+    private Paint mDragPaint;
+
+    private int mDragZoneWidth;
+    private int mDragBoarderHeight;
+    private int mDragZoneTouchWidth;
+
+    @TouchMode
+    private int mCurrentMode = TouchMode.NONE;
+    private float mLastXPost = -1;
+
     public ChartControlView(Context context) {
         super(context);
+        init();
     }
 
     public ChartControlView(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
+        init();
+    }
+
+    private void init() {
+        mDragZoneWidth = getContext().getResources().getDimensionPixelSize(R.dimen.drag_zone_width);
+        mDragZoneTouchWidth = getContext().getResources().getDimensionPixelSize(R.dimen.drag_zone_touch_width);
+        mDragBoarderHeight = getContext().getResources().getDimensionPixelSize(R.dimen.drag_border_height);
+
+        mMaskPaint = new Paint();
+        mMaskPaint.setColor(Color.GRAY);
+        mMaskPaint.setAlpha(30);
+        mMaskPaint.setStyle(Paint.Style.FILL);
+
+        mDragPaint = new Paint();
+        mDragPaint.setColor(Color.GRAY);
+        mDragPaint.setAlpha(90);
+        mDragPaint.setStyle(Paint.Style.FILL);
+
+        setOnTouchListener(new OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+
+                if (event.getAction() == MotionEvent.ACTION_UP) {
+                    mCurrentMode = TouchMode.NONE;
+                }
+
+                if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                    float left = (float) mMinPos / ChartLayout.MAX_DISCRETE_PROGRESS * getWidth();
+                    float leftLeft = left - (float) mDragZoneTouchWidth / 2;
+                    float leftRight = left + (float) mDragZoneTouchWidth / 2;
+
+                    float right = (float) mMaxPos / ChartLayout.MAX_DISCRETE_PROGRESS * getWidth();
+                    float rightLeft = right - (float) mDragZoneTouchWidth / 2;
+                    float rightRight = right + (float) mDragZoneTouchWidth / 2;
+                    if (event.getX() >= leftLeft && event.getX() <= leftRight) {
+                        mCurrentMode = TouchMode.LEFT_BOARDER;
+                    } else if (event.getX() >= rightLeft && event.getX() <= rightRight) {
+                        mCurrentMode = TouchMode.RIGHT_BOARDER;
+                    } else if (event.getX() >= leftLeft && event.getX() <= rightRight) {
+                        mCurrentMode = TouchMode.DRAG_REGION;
+                        mLastXPost = event.getX();
+                    }
+                }
+
+                if (event.getAction() == MotionEvent.ACTION_MOVE) {
+                    int min = mMinPos;
+                    int max = mMaxPos;
+                    switch (mCurrentMode) {
+                        case TouchMode.LEFT_BOARDER:
+                            min = (int) ((event.getX() / v.getWidth()) * ChartLayout.MAX_DISCRETE_PROGRESS);
+                            break;
+                        case TouchMode.RIGHT_BOARDER:
+                            max = (int) ((event.getX() / v.getWidth()) * ChartLayout.MAX_DISCRETE_PROGRESS);
+                            break;
+                        case TouchMode.DRAG_REGION:
+                            for (int i = 0; i < event.getHistorySize(); i++) {
+                                float diff = ((event.getX() - mLastXPost) / v.getWidth()) * ChartLayout.MAX_DISCRETE_PROGRESS;
+                                mLastXPost = event.getX();
+                                if (min + diff < 0 || max + diff > ChartLayout.MAX_DISCRETE_PROGRESS) {
+                                    return true;
+                                }
+                                min += diff;
+                                max += diff;
+                            }
+                            break;
+                    }
+                    setMinMax(min, max);
+                }
+                return true;
+            }
+        });
+    }
+
+    public void setMinMax(int min, int max) {
+        if (max - min < 1) return;
+        mMinPos = Math.max(min, 0);
+        mMaxPos = Math.min(max, ChartLayout.MAX_DISCRETE_PROGRESS);
+        if (mListener != null) {
+            mListener.onBoarderChange(mMinPos, mMaxPos);
+        }
+        invalidate();
+    }
+
+    public void setListener(@Nullable Listener listener) {
+        mListener = listener;
     }
 
     @Override
@@ -140,42 +262,36 @@ public class ChartControlView extends View {
             }
         }
 
+        // Draw left portion of mask
+        float leftRight = (float) mMinPos / ChartLayout.MAX_DISCRETE_PROGRESS * getWidth();
+        canvas.drawRect(0, 0, leftRight, getHeight(), mMaskPaint);
+        // Draw left draggable field
+        canvas.drawRect(leftRight, 0, leftRight + mDragZoneWidth, getHeight(), mDragPaint);
+        // Draw top border
+        float rightLeft = (float) mMaxPos / ChartLayout.MAX_DISCRETE_PROGRESS * getWidth();
+        canvas.drawRect(leftRight + mDragZoneWidth, 0, rightLeft - mDragZoneWidth,
+                mDragBoarderHeight, mDragPaint);
+        // Draw bottom border
+        canvas.drawRect(leftRight + mDragZoneWidth, getHeight() - mDragBoarderHeight,
+                rightLeft - mDragZoneWidth, getHeight(), mDragPaint);
+        // Draw right draggable field
+        canvas.drawRect(rightLeft - mDragZoneWidth, 0, rightLeft, getHeight(), mDragPaint);
+        // Draw right portion of mask
+        canvas.drawRect(rightLeft, 0, getWidth(), getHeight(), mMaskPaint);
     }
 
-    /**
-     * We assume that whole seekbar graph is descrete from 0 to {@link ChartLayout#MAX_DISCRETE_PROGRESS}.
-     * User can't stop it's scroll on e.g. 0.5 point, from 0 graph will jump to 1 directly.
-     * Like seekbar - when dev. set max to 2, there is 3 point {0,1,2} and user can't stop at any
-     * other value.
-     *
-     * @param xValueRightRegion Value from [0..{@link ChartLayout#MAX_DISCRETE_PROGRESS}] -
-     *                          right border of selected region
-     * @param xValueLeftRegion  Value from [0..{@link ChartLayout#MAX_DISCRETE_PROGRESS}] -
-     *                          left border of selected region
-     */
-    public void setMaxVisibleRegionPercent(final int xValueLeftRegion, final int xValueRightRegion) {
-        if (mChartData == null) {
-            throw new IllegalStateException("Set data first");
-        }
+    public void setChartData(@NonNull final ChartData data) {
 
         if (getWidth() == 0) {
             post(new Runnable() {
                 @Override
                 public void run() {
-                    setMaxVisibleRegionPercent(xValueLeftRegion, xValueRightRegion);
+                    setChartData(data);
                 }
             });
             return;
         }
 
-        mStepXForMaxScale = (float) getWidth() / (mChartData.getSize() - 1);
-        mLeftCurrentXBoarderValue = (float) xValueLeftRegion / ChartLayout.MAX_DISCRETE_PROGRESS * getWidth();
-        mRightCurrentXBoarderValue = (float) xValueRightRegion / ChartLayout.MAX_DISCRETE_PROGRESS * getWidth();
-
-        invalidate();
-    }
-
-    public void setChartData(@NonNull ChartData data) {
         mChartData = data;
         mPaints.clear();
         for (ChartData.YData yData : mChartData.getYValues()) {
@@ -188,6 +304,11 @@ public class ChartControlView extends View {
 
             mPaints.put(yData.getVarName(), paint);
         }
+
+        mStepXForMaxScale = (float) getWidth() / (mChartData.getSize() - 1);
+        mLeftCurrentXBoarderValue = 0;
+        mRightCurrentXBoarderValue = getWidth();
+
         invalidate();
     }
 
@@ -200,5 +321,9 @@ public class ChartControlView extends View {
         mStartToggleTime = System.currentTimeMillis();
         mLineToToggle = yVarName;
         invalidate();
+    }
+
+    public interface Listener {
+        void onBoarderChange(int left, int right);
     }
 }
