@@ -21,8 +21,7 @@ public class ChartLayout extends LinearLayout implements CompoundButton.OnChecke
     public static int MAX_DISCRETE_PROGRESS = 10000;
 
     private ChartView mChartView;
-    // TODO implement chartControlViewHere
-    private ChartView mChartControlView;
+    private ChartControlView mChartControlView;
 
     private List<CheckBox> mCheckBoxes = new ArrayList<>();
     private ChartData mData;

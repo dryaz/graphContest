@@ -6,7 +6,7 @@
         android:layout_width="match_parent"
         android:layout_height="300dp" />
 
-    <com.dimlix.tgcontest.chart.ChartView
+    <com.dimlix.tgcontest.chart.ChartControlView
         android:id="@+id/chartControl"
         android:layout_width="match_parent"
         android:layout_marginBottom="16dp"
