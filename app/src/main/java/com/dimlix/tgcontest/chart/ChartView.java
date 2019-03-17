@@ -8,6 +8,8 @@ import android.graphics.Path;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
+import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
 
 import com.dimlix.tgcontest.R;
@@ -53,6 +55,8 @@ public class ChartView extends View {
     private int mAxisWidth;
     private int mAxisTextSize;
 
+    private float mTouchXValue = -1;
+
     public ChartView(Context context) {
         super(context);
         init();
@@ -76,6 +80,21 @@ public class ChartView extends View {
         mAxisTextPaint = new Paint();
         mAxisTextPaint.setColor(Color.GRAY);
         mAxisTextPaint.setTextSize(mAxisTextSize);
+
+        setOnTouchListener(new OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                if (event.getAction() == MotionEvent.ACTION_DOWN
+                        || event.getAction() == MotionEvent.ACTION_MOVE) {
+                    mTouchXValue = event.getX();
+                }
+                if (event.getAction() == MotionEvent.ACTION_UP) {
+                    mTouchXValue = -1;
+                }
+                invalidate();
+                return true;
+            }
+        });
     }
 
     @Override
@@ -172,6 +191,13 @@ public class ChartView extends View {
                     getWidth(), getHeight() - mAxisWidth - yDistance * i, mAxisPaint);
             canvas.drawText(String.valueOf(yAxisStep * i), 0,
                     getHeight() - mAxisWidth - yDistance * i - mAxisTextSize / 2, mAxisTextPaint);
+        }
+
+        // Draw info about touched section
+        if (mTouchXValue > 0) {
+            int nearestIndexTouched = Math.round((mTouchXValue / scale + translation) / mStepXForMaxScale);
+            float xValToDraw = (nearestIndexTouched * mStepXForMaxScale - translation) * scale;
+            canvas.drawLine(xValToDraw, 0, xValToDraw, getHeight(), mAxisPaint);
         }
 
 
