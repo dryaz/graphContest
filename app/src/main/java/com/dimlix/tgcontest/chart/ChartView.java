@@ -5,23 +5,30 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
-import android.graphics.PorterDuff;
-import android.graphics.PorterDuffXfermode;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.View;
 
+import com.dimlix.tgcontest.R;
 import com.dimlix.tgcontest.model.ChartData;
 
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Class to display chart data.
+ * <p>
+ * Some part is the same with {@link ChartControlView} but code is kept separate because
+ * looks like it should be more flexible rather then common,
+ * e.g. chart line toggling animation is different.
+ */
 public class ChartView extends View {
 
     private static final int TOGGLE_ANIM_DURATION = 300;
+    // When user change view region chart y axis is animated with this duration.
     private static final int SHIFT_ANIM_DURATION = 100;
+    private static final int NUM_HOR_AXIS = 6;
 
     private Path mPath = new Path();
     private Map<String, Paint> mPaints = new HashMap<>();
@@ -41,12 +48,34 @@ public class ChartView extends View {
     // Needs to animate chart when user toggle line/
     private long mLastMaxPossibleYever;
 
+    private Paint mAxisPaint;
+    private Paint mAxisTextPaint;
+    private int mAxisWidth;
+    private int mAxisTextSize;
+
     public ChartView(Context context) {
         super(context);
+        init();
     }
 
     public ChartView(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
+        init();
+    }
+
+    private void init() {
+        mAxisWidth = getContext().getResources().getDimensionPixelSize(R.dimen.axis_width);
+        mAxisTextSize = getContext().getResources().getDimensionPixelSize(R.dimen.axis_text_size);
+
+        mAxisPaint = new Paint();
+        mAxisPaint.setColor(Color.GRAY);
+        mAxisPaint.setAlpha(50);
+        mAxisPaint.setStyle(Paint.Style.FILL);
+        mAxisPaint.setStrokeWidth(mAxisWidth);
+
+        mAxisTextPaint = new Paint();
+        mAxisTextPaint.setColor(Color.GRAY);
+        mAxisTextPaint.setTextSize(mAxisTextSize);
     }
 
     @Override
@@ -61,6 +90,7 @@ public class ChartView extends View {
             return;
         }
 
+        // Draw chart lines
         float scale = (float) getWidth() / (mRightCurrentXBoarderValue - mLeftCurrentXBoarderValue);
         float translation = mLeftCurrentXBoarderValue;
 
@@ -134,6 +164,18 @@ public class ChartView extends View {
             canvas.drawPath(mPath, paint);
         }
 
+        // Draw chart axis
+        int yAxisStep = Math.round((float) maxPossibleYever / NUM_HOR_AXIS);
+        int yDistance = getHeight() / (NUM_HOR_AXIS);
+        for (int i = 0; i < NUM_HOR_AXIS; i++) {
+            canvas.drawLine(0, getHeight() - mAxisWidth - yDistance * i,
+                    getWidth(), getHeight() - mAxisWidth - yDistance * i, mAxisPaint);
+            canvas.drawText(String.valueOf(yAxisStep * i), 0,
+                    getHeight() - mAxisWidth - yDistance * i - mAxisTextSize / 2, mAxisTextPaint);
+        }
+
+
+        // Run draw loop in case animation is running.
         if (progress < 1) {
             invalidate();
         } else {

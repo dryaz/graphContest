@@ -21,8 +21,17 @@ import com.dimlix.tgcontest.model.ChartData;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Class to to control displayed chart.
+ *
+ * Some part is the same with {@link ChartView} but code is kept separate because
+ * looks like it should be more flexible rather then common,
+ * e.g. chart line toggling animation is different.
+ */
 public class ChartControlView extends View {
+    // Animation duration for switching chart lies on/off
     private static final int TOGGLE_ANIM_DURATION = 300;
+    // Distance between left and right draggable controls
     private static final int MIN_MAX_DIFF_THRESHOLD = (int) (ChartLayout.MAX_DISCRETE_PROGRESS * 0.1);
 
     @IntDef({
@@ -39,7 +48,9 @@ public class ChartControlView extends View {
 
     }
 
+    // To avoid object creation during onDraw save path locally.
     private Path mPath = new Path();
+    // Each line has it's own paint.
     private Map<String, Paint> mPaints = new HashMap<>();
 
     private float mLeftCurrentXBoarderValue = 0;
@@ -47,6 +58,7 @@ public class ChartControlView extends View {
 
     private float mStepXForMaxScale;
 
+    // Animation for toggled line and other lines are different --> keep id of toggled line.
     @Nullable
     private String mLineToToggle = null;
 
@@ -68,6 +80,8 @@ public class ChartControlView extends View {
 
     private int mDragZoneWidth;
     private int mDragBoarderHeight;
+    // Draggable control width and touch zone could be different, guidelines says to use at least
+    // 48dp for touch objects but as per design width is different.
     private int mDragZoneTouchWidth;
 
     @TouchMode
@@ -174,7 +188,7 @@ public class ChartControlView extends View {
         }
 
         if (mStepXForMaxScale == 0) {
-            // Chart range is not set yet.
+            // Chart range is not set yet, skip.
             return;
         }
 

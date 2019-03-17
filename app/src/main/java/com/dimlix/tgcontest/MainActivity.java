@@ -14,12 +14,6 @@ import java.io.InputStream;
 
 public class MainActivity extends AppCompatActivity {
 
-    private int curProgress = 1;
-    private final int MAXP = 1000;
-
-    private int mLeftBoarder = 0;
-    private int mRightBoarder = 10000;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -34,7 +28,7 @@ public class MainActivity extends AppCompatActivity {
     public String loadGraphJSONFromAsset() {
         String json = null;
         try {
-            InputStream is = getAssets().open("chart_data.json");
+            InputStream is = getAssets().open("chart_data_test.json");
             int size = is.available();
             byte[] buffer = new byte[size];
             is.read(buffer);

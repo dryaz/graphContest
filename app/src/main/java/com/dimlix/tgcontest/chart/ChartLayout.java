@@ -16,6 +16,10 @@ import com.dimlix.tgcontest.model.ChartData;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Basic layout that contains {@link ChartView} that displays chart
+ * and {@link ChartControlView} that control behaviour.
+ */
 public class ChartLayout extends LinearLayout implements CompoundButton.OnCheckedChangeListener {
 
     public static int MAX_DISCRETE_PROGRESS = 10000;
