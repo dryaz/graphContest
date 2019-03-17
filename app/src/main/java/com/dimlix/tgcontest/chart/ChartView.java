@@ -104,9 +104,6 @@ public class ChartView extends View {
             float masPossibleYeverComputed =
                     mLastMaxPossibleYever + (maxPossibleYever - mLastMaxPossibleYever) * progress;
 
-            Log.e("!@#"," max computed " + masPossibleYeverComputed);
-            Log.e("!@#"," progress " + progress);
-
             if (!yData.getVarName().equals(mLineToToggle)) {
                 if (!yData.isShown()) {
                     continue;

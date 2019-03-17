@@ -60,8 +60,8 @@ public class ChartControlView extends View {
     @Nullable
     private Listener mListener;
 
-    private int mMinPos = 0;
-    private int mMaxPos = ChartLayout.MAX_DISCRETE_PROGRESS;
+    private float mMinPos = 0;
+    private float mMaxPos = ChartLayout.MAX_DISCRETE_PROGRESS;
 
     private Paint mMaskPaint;
     private Paint mDragPaint;
@@ -126,8 +126,8 @@ public class ChartControlView extends View {
                 }
 
                 if (event.getAction() == MotionEvent.ACTION_MOVE) {
-                    int min = mMinPos;
-                    int max = mMaxPos;
+                    float min = mMinPos;
+                    float max = mMaxPos;
                     switch (mCurrentMode) {
                         case TouchMode.LEFT_BOARDER:
                             min = (int) ((event.getX() / v.getWidth()) * ChartLayout.MAX_DISCRETE_PROGRESS);
@@ -136,15 +136,13 @@ public class ChartControlView extends View {
                             max = (int) ((event.getX() / v.getWidth()) * ChartLayout.MAX_DISCRETE_PROGRESS);
                             break;
                         case TouchMode.DRAG_REGION:
-                            for (int i = 0; i < event.getHistorySize(); i++) {
-                                float diff = ((event.getX() - mLastXPost) / v.getWidth()) * ChartLayout.MAX_DISCRETE_PROGRESS;
-                                mLastXPost = event.getX();
-                                if (min + diff < 0 || max + diff > ChartLayout.MAX_DISCRETE_PROGRESS) {
-                                    return true;
-                                }
-                                min += diff;
-                                max += diff;
+                            float diff = ((event.getX() - mLastXPost) / v.getWidth()) * ChartLayout.MAX_DISCRETE_PROGRESS;
+                            mLastXPost = event.getX();
+                            if (min + diff < 0 || max + diff > ChartLayout.MAX_DISCRETE_PROGRESS) {
+                                return true;
                             }
+                            min += diff;
+                            max += diff;
                             break;
                     }
                     setMinMax(min, max);
@@ -154,12 +152,12 @@ public class ChartControlView extends View {
         });
     }
 
-    public void setMinMax(int min, int max) {
+    public void setMinMax(float min, float max) {
         if (max - min < MIN_MAX_DIFF_THRESHOLD) return;
         mMinPos = Math.max(min, 0);
         mMaxPos = Math.min(max, ChartLayout.MAX_DISCRETE_PROGRESS);
         if (mListener != null) {
-            mListener.onBoarderChange(mMinPos, mMaxPos);
+            mListener.onBoarderChange(Math.round(mMinPos), Math.round(mMaxPos));
         }
         invalidate();
     }
