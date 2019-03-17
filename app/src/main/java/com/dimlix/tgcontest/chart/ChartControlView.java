@@ -23,6 +23,7 @@ import java.util.Map;
 
 public class ChartControlView extends View {
     private static final int TOGGLE_ANIM_DURATION = 300;
+    private static final int MIN_MAX_DIFF_THRESHOLD = (int) (ChartLayout.MAX_DISCRETE_PROGRESS * 0.1);
 
     @IntDef({
             TouchMode.NONE,
@@ -154,7 +155,7 @@ public class ChartControlView extends View {
     }
 
     public void setMinMax(int min, int max) {
-        if (max - min < 1) return;
+        if (max - min < MIN_MAX_DIFF_THRESHOLD) return;
         mMinPos = Math.max(min, 0);
         mMaxPos = Math.min(max, ChartLayout.MAX_DISCRETE_PROGRESS);
         if (mListener != null) {

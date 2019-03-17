@@ -21,6 +21,7 @@ import java.util.Map;
 public class ChartView extends View {
 
     private static final int TOGGLE_ANIM_DURATION = 300;
+    private static final int SHIFT_ANIM_DURATION = 100;
 
     private Path mPath = new Path();
     private Map<String, Paint> mPaints = new HashMap<>();
@@ -36,7 +37,7 @@ public class ChartView extends View {
     @Nullable
     private ChartData mChartData = null;
 
-    private long mStartToggleTime;
+    private long mStartToggleTime = -1;
     // Needs to animate chart when user toggle line/
     private long mLastMaxPossibleYever;
 
@@ -58,12 +59,6 @@ public class ChartView extends View {
         if (mStepXForMaxScale == 0) {
             // Chart range is not set yet.
             return;
-        }
-
-        long elapsed = System.currentTimeMillis() - mStartToggleTime;
-        float progress = 1;
-        if (mLineToToggle != null) {
-            progress = (float) elapsed / TOGGLE_ANIM_DURATION;
         }
 
         float scale = (float) getWidth() / (mRightCurrentXBoarderValue - mLeftCurrentXBoarderValue);
@@ -90,11 +85,27 @@ public class ChartView extends View {
             maxPossibleYever = mLastMaxPossibleYever;
         }
 
+        float progress = 1;
+        if (mLineToToggle != null || maxPossibleYever != mLastMaxPossibleYever) {
+            if (mStartToggleTime == -1) {
+                mStartToggleTime = System.currentTimeMillis();
+            }
+            long elapsed = System.currentTimeMillis() - mStartToggleTime;
+            if (mLineToToggle != null) {
+                progress = (float) elapsed / TOGGLE_ANIM_DURATION;
+            } else {
+                progress = (float) elapsed / SHIFT_ANIM_DURATION;
+            }
+        }
+
         for (int k = 0; k < mChartData.getYValues().size(); k++) {
             mPath.reset();
             ChartData.YData yData = mChartData.getYValues().get(k);
             float masPossibleYeverComputed =
                     mLastMaxPossibleYever + (maxPossibleYever - mLastMaxPossibleYever) * progress;
+
+            Log.e("!@#"," max computed " + masPossibleYeverComputed);
+            Log.e("!@#"," progress " + progress);
 
             if (!yData.getVarName().equals(mLineToToggle)) {
                 if (!yData.isShown()) {
@@ -115,7 +126,6 @@ public class ChartView extends View {
                 throw new RuntimeException("There is no color info for " + yData.getVarName());
             }
 
-            int alpha = 255;
             if (yData.getVarName().equals(mLineToToggle)) {
                 if (yData.isShown()) {
                     paint.setAlpha(Math.min(((int) (255 * progress)), 255));
@@ -127,11 +137,12 @@ public class ChartView extends View {
             canvas.drawPath(mPath, paint);
         }
 
-        if (progress < 1 && (mLineToToggle != null)) {
+        if (progress < 1) {
             invalidate();
         } else {
-            mLastMaxPossibleYever = maxPossibleYever;
-            if (mLineToToggle != null) {
+            mStartToggleTime = -1;
+            if (mLineToToggle != null || mLastMaxPossibleYever != maxPossibleYever) {
+                mLastMaxPossibleYever = maxPossibleYever;
                 mLineToToggle = null;
                 invalidate();
             }
