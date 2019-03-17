@@ -222,11 +222,13 @@ public class ChartControlView extends View {
             maxPossibleYever = mLastMaxPossibleYever;
         }
 
+        float masPossibleYeverComputed =
+                mLastMaxPossibleYever + (maxPossibleYever - mLastMaxPossibleYever) * progress;
+        float yStep = (float) getHeight() / masPossibleYeverComputed;
+
         for (int k = 0; k < mChartData.getYValues().size(); k++) {
             mPath.reset();
             ChartData.YData yData = mChartData.getYValues().get(k);
-            float masPossibleYeverComputed =
-                    mLastMaxPossibleYever + (maxPossibleYever - mLastMaxPossibleYever) * progress;
 
             if (!yData.getVarName().equals(mLineToToggle)) {
                 if (!yData.isShown()) {
@@ -240,7 +242,6 @@ public class ChartControlView extends View {
                 }
             }
 
-            float yStep = (float) getHeight() / masPossibleYeverComputed;
             mPath.moveTo((firstPointToShow * mStepXForMaxScale - translation) * scale,
                     getHeight() - yData.getValues().get(0) * yStep);
             for (int i = firstPointToShow + 1; i <= lastPointToShow; i++) {

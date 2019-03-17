@@ -8,7 +8,6 @@ import android.graphics.Path;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
@@ -52,8 +51,11 @@ public class ChartView extends View {
 
     private Paint mAxisPaint;
     private Paint mAxisTextPaint;
+    private Paint mTouchedCirclePaint;
+
     private int mAxisWidth;
     private int mAxisTextSize;
+    private int mAxisSelectedCircleSize;
 
     private float mTouchXValue = -1;
 
@@ -70,6 +72,7 @@ public class ChartView extends View {
     private void init() {
         mAxisWidth = getContext().getResources().getDimensionPixelSize(R.dimen.axis_width);
         mAxisTextSize = getContext().getResources().getDimensionPixelSize(R.dimen.axis_text_size);
+        mAxisSelectedCircleSize = getContext().getResources().getDimensionPixelSize(R.dimen.axis_selected_circle);
 
         mAxisPaint = new Paint();
         mAxisPaint.setColor(Color.GRAY);
@@ -80,6 +83,10 @@ public class ChartView extends View {
         mAxisTextPaint = new Paint();
         mAxisTextPaint.setColor(Color.GRAY);
         mAxisTextPaint.setTextSize(mAxisTextSize);
+
+        mTouchedCirclePaint = new Paint();
+        mTouchedCirclePaint.setStyle(Paint.Style.FILL);
+        mTouchedCirclePaint.setColor(Color.WHITE);
 
         setOnTouchListener(new OnTouchListener() {
             @Override
@@ -147,11 +154,14 @@ public class ChartView extends View {
             }
         }
 
+        float masPossibleYeverComputed =
+                mLastMaxPossibleYever + (maxPossibleYever - mLastMaxPossibleYever) * progress;
+        float yStep = (float) getHeight() / masPossibleYeverComputed;
+
         for (int k = 0; k < mChartData.getYValues().size(); k++) {
             mPath.reset();
             ChartData.YData yData = mChartData.getYValues().get(k);
-            float masPossibleYeverComputed =
-                    mLastMaxPossibleYever + (maxPossibleYever - mLastMaxPossibleYever) * progress;
+
 
             if (!yData.getVarName().equals(mLineToToggle)) {
                 if (!yData.isShown()) {
@@ -159,7 +169,6 @@ public class ChartView extends View {
                 }
             }
 
-            float yStep = (float) getHeight() / masPossibleYeverComputed;
             mPath.moveTo((firstPointToShow * mStepXForMaxScale - translation) * scale,
                     getHeight() - yData.getValues().get(0) * yStep);
             for (int i = firstPointToShow + 1; i <= lastPointToShow; i++) {
@@ -198,6 +207,20 @@ public class ChartView extends View {
             int nearestIndexTouched = Math.round((mTouchXValue / scale + translation) / mStepXForMaxScale);
             float xValToDraw = (nearestIndexTouched * mStepXForMaxScale - translation) * scale;
             canvas.drawLine(xValToDraw, 0, xValToDraw, getHeight(), mAxisPaint);
+            for (int k = 0; k < mChartData.getYValues().size(); k++) {
+                ChartData.YData yData = mChartData.getYValues().get(k);
+                if (!yData.isShown()) continue;
+                Paint paint = mPaints.get(yData.getVarName());
+                if (paint == null) {
+                    throw new RuntimeException("There is no color info for " + yData.getVarName());
+                }
+                canvas.drawCircle(xValToDraw,
+                        getHeight() - yData.getValues().get(nearestIndexTouched) * yStep,
+                        mAxisSelectedCircleSize, mTouchedCirclePaint);
+                canvas.drawCircle(xValToDraw,
+                        getHeight() - yData.getValues().get(nearestIndexTouched) * yStep,
+                        mAxisSelectedCircleSize, paint);
+            }
         }
 
 
