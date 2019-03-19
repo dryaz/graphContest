@@ -7,7 +7,7 @@
         <item name="android:textColorPrimaryInverse">@color/textColorPrimaryInvertedLight</item>
         <item name="android:windowBackground">@color/windowBackgroundLight</item>
         <item name="bgChartColor">#fff</item>
-        <item name="axisChartTextColor">#96a2aa</item>
+        <item name="axisChartTextColor">#808a91</item>
         <item name="axisChartColor">#f1f1f2</item>
         <item name="axisChartCouchedCircleFillColor">#fff</item>
         <item name="infoDateTextColor">#000</item>

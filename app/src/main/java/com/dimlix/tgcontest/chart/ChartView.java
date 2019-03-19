@@ -107,7 +107,7 @@ public class ChartView extends View {
 
         mAxisPaint = new Paint();
         mAxisPaint.setColor(typedValue.data);
-        mAxisPaint.setAlpha(50);
+        mAxisPaint.setAlpha(70);
         mAxisPaint.setStyle(Paint.Style.FILL);
         mAxisPaint.setStrokeWidth(mAxisWidth);
 
@@ -231,11 +231,21 @@ public class ChartView extends View {
         // Draw chart Y axis
         int yAxisStep = Math.round((float) maxPossibleYever / NUM_HOR_AXIS);
         int yDistance = getHeightWithoutXAxis() / (NUM_HOR_AXIS);
+        byte animDirection;
+        if (mLastMaxPossibleYever > maxPossibleYever) {
+            animDirection = -1;
+        } else if (mLastMaxPossibleYever < maxPossibleYever) {
+            animDirection = 1;
+        } else {
+            animDirection = 0;
+        }
         for (int i = 0; i < NUM_HOR_AXIS; i++) {
-            canvas.drawLine(0, getHeightWithoutXAxis() - mAxisWidth - yDistance * i,
-                    getWidth(), getHeightWithoutXAxis() - mAxisWidth - yDistance * i, mAxisPaint);
-            canvas.drawText(String.valueOf(yAxisStep * i), 0,
-                    getHeightWithoutXAxis() - mAxisWidth - yDistance * i - mAxisTextSize / 2, mAxisTextPaint);
+            int y = (getHeightWithoutXAxis() - mAxisWidth - yDistance * i);
+            if (i > 0) {
+                y += (animDirection * (lineToggleProgress - 1) * yDistance);
+            }
+            canvas.drawLine(0, y, getWidth(), y, mAxisPaint);
+            canvas.drawText(String.valueOf(yAxisStep * i), 0, y - (float) mAxisTextSize / 2, mAxisTextPaint);
         }
 
         //Draw chart X axis
@@ -376,9 +386,13 @@ public class ChartView extends View {
         if (lineToggleProgress < 1 || xAxisValuesProgress < 1) {
             invalidate();
         } else {
-            mStartXAxisAnimTime = -1;
-            mStartToggleTime = -1;
-            mPrevLastXValuesStep = mLastXValuesStep;
+            if (xAxisValuesProgress >= 1) {
+                mStartXAxisAnimTime = -1;
+                mPrevLastXValuesStep = mLastXValuesStep;
+            }
+            if (lineToggleProgress >= 1) {
+                mStartToggleTime = -1;
+            }
             if (mLineToToggle != null || mLastMaxPossibleYever != maxPossibleYever) {
                 mLastMaxPossibleYever = maxPossibleYever;
                 mLineToToggle = null;
