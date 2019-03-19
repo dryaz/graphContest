@@ -7,4 +7,5 @@
     android:layout_marginBottom="8dp"
     android:background="?bgChartColor"
     android:elevation="2dp"
-    android:padding="16dp"/>
+    android:paddingStart="16dp"
+    android:paddingTop="16dp"/>

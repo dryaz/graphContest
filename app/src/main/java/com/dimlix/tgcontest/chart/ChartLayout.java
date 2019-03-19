@@ -74,7 +74,6 @@ public class ChartLayout extends LinearLayout implements CompoundButton.OnChecke
 
     public void setData(ChartData data) {
         mData = data;
-        // TODO reset view after data is set?
         mChartView.setChartData(data);
         mChartControlView.setChartData(data);
 
@@ -93,17 +92,20 @@ public class ChartLayout extends LinearLayout implements CompoundButton.OnChecke
 
         LayoutInflater inflater = LayoutInflater.from(getContext());
 
+        int count = 0;
         for (ChartData.YData yData : data.getYValues()) {
             CheckBox checkbox = (CheckBox) inflater.inflate(R.layout.chart_checkbox, null);
             int colors[] = {Color.parseColor(yData.getColor()), Color.BLACK};
             checkbox.setButtonTintList(new ColorStateList(states, colors));
             checkbox.setText(yData.getAlias());
             checkbox.setChecked(true);
-            // TODO add delimiter
             checkbox.setTag(yData.getVarName());
             checkbox.setOnCheckedChangeListener(this);
-
             addView(checkbox);
+            if (count++ < data.getYValues().size() - 1) {
+                View deli = inflater.inflate(R.layout.chart_checkbox_delimeter, this, false);
+                addView(deli);
+            }
         }
     }
 

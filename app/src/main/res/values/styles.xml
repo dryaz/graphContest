@@ -12,6 +12,7 @@
         <item name="axisChartCouchedCircleFillColor">#fff</item>
         <item name="infoDateTextColor">#000</item>
         <item name="infoBgColor">#ffffff</item>
+        <item name="chartDelimeter">#f1f1f2</item>
     </style>
 
     <style name="AppThemeDark" parent="android:Theme.Material">
@@ -26,6 +27,7 @@
         <item name="android:windowBackground">@color/windowBackgroundDark</item>
         <item name="infoDateTextColor">#e5eff5</item>
         <item name="infoBgColor">#202b38</item>
+        <item name="chartDelimeter">#35434d</item>
     </style>
 
 </resources>

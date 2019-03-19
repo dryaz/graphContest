@@ -6,4 +6,5 @@
     <attr name="axisChartCouchedCircleFillColor" format="reference|color" />
     <attr name="infoDateTextColor" format="reference|color" />
     <attr name="infoBgColor" format="reference|color" />
+    <attr name="chartDelimeter" format="reference|color" />
 </resources>
