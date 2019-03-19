@@ -1,7 +1,5 @@
 package com.dimlix.tgcontest;
 
-import android.support.annotation.StringDef;
-
 import com.dimlix.tgcontest.model.ChartData;
 import com.dimlix.tgcontest.model.GraphData;
 
@@ -16,10 +14,6 @@ import java.util.List;
 import java.util.Map;
 
 public class JsonGraphReader {
-    @StringDef({Set.COLORS,
-            Set.COLUMNS,
-            Set.NAMES,
-            Set.TYPES})
     private @interface Set {
         String COLUMNS = "columns";
         String TYPES = "types";
@@ -27,8 +21,6 @@ public class JsonGraphReader {
         String COLORS = "colors";
     }
 
-    @StringDef({Type.LINE,
-            Type.X})
     private @interface Type {
         String LINE = "line";
         String X = "x";

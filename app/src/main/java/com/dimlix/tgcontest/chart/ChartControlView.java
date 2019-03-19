@@ -5,13 +5,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
-import android.support.annotation.IntDef;
-import android.support.annotation.InterpolatorRes;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
-import android.text.method.Touch;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
@@ -34,12 +28,6 @@ public class ChartControlView extends View {
     // Distance between left and right draggable controls
     private static final int MIN_MAX_DIFF_THRESHOLD = (int) (ChartLayout.MAX_DISCRETE_PROGRESS * 0.1);
 
-    @IntDef({
-            TouchMode.NONE,
-            TouchMode.LEFT_BOARDER,
-            TouchMode.RIGHT_BOARDER,
-            TouchMode.DRAG_REGION,
-    })
     public @interface TouchMode {
         int NONE = 0;
         int LEFT_BOARDER = 1;
@@ -59,17 +47,14 @@ public class ChartControlView extends View {
     private float mStepXForMaxScale;
 
     // Animation for toggled line and other lines are different --> keep id of toggled line.
-    @Nullable
     private String mLineToToggle = null;
 
-    @Nullable
     private ChartData mChartData = null;
 
     private long mStartToggleTime;
     // Needs to animate chart when user toggle line/
     private long mLastMaxPossibleYever;
 
-    @Nullable
     private Listener mListener;
 
     private float mMinPos = 0;
@@ -93,7 +78,7 @@ public class ChartControlView extends View {
         init();
     }
 
-    public ChartControlView(Context context, @Nullable AttributeSet attrs) {
+    public ChartControlView(Context context, AttributeSet attrs) {
         super(context, attrs);
         init();
     }
@@ -176,7 +161,7 @@ public class ChartControlView extends View {
         invalidate();
     }
 
-    public void setListener(@Nullable Listener listener) {
+    public void setListener(Listener listener) {
         mListener = listener;
     }
 
@@ -294,7 +279,7 @@ public class ChartControlView extends View {
         canvas.drawRect(rightLeft, 0, getWidth(), getHeight(), mMaskPaint);
     }
 
-    public void setChartData(@NonNull final ChartData data) {
+    public void setChartData(final ChartData data) {
 
         if (getWidth() == 0) {
             post(new Runnable() {

@@ -5,8 +5,6 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
@@ -44,10 +42,8 @@ public class ChartView extends View {
 
     private float mStepXForMaxScale;
 
-    @Nullable
     private String mLineToToggle = null;
 
-    @Nullable
     private ChartData mChartData = null;
 
     private long mStartToggleTime = -1;
@@ -77,7 +73,7 @@ public class ChartView extends View {
         init();
     }
 
-    public ChartView(Context context, @Nullable AttributeSet attrs) {
+    public ChartView(Context context, AttributeSet attrs) {
         super(context, attrs);
         init();
     }
@@ -370,7 +366,7 @@ public class ChartView extends View {
         invalidate();
     }
 
-    public void setChartData(@NonNull ChartData data) {
+    public void setChartData(ChartData data) {
         mChartData = data;
         mPaints.clear();
         for (ChartData.YData yData : mChartData.getYValues()) {
