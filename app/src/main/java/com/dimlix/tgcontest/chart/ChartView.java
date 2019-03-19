@@ -7,14 +7,20 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.util.AttributeSet;
+import android.util.Pair;
 import android.util.TypedValue;
+import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
+import android.widget.TextView;
 
 import com.dimlix.tgcontest.R;
 import com.dimlix.tgcontest.model.ChartData;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -35,6 +41,7 @@ public class ChartView extends View {
     public static final int OFFSET_DRAW_NUM = 1;
     public static final int OFFSET_X_AXIS_DRAW_NUM = 8;
     private static final int DISTANCE_THRESHOLD = 4;
+    public static final int INFO_PANEL_SHIFT = 50;
 
     private Path mPath = new Path();
     private Map<String, Paint> mPaints = new HashMap<>();
@@ -71,6 +78,8 @@ public class ChartView extends View {
     private float mTouchXValue = -1;
 
     private Listener mListener;
+
+    private InfoPanelViewHolder mInfoPanelViewHolder;
 
     public ChartView(Context context) {
         super(context);
@@ -311,22 +320,55 @@ public class ChartView extends View {
         // Draw info about touched section
         if (mTouchXValue > 0) {
             int nearestIndexTouched = Math.round((mTouchXValue / scale + translation) / mStepXForMaxScale);
+            if (nearestIndexTouched >= mChartData.getSize() - 1) {
+                nearestIndexTouched = mChartData.getSize() - 1;
+            } else if (nearestIndexTouched < 0) {
+                nearestIndexTouched = 0;
+            }
             float xValToDraw = (nearestIndexTouched * mStepXForMaxScale - translation) * scale;
             canvas.drawLine(xValToDraw, 0, xValToDraw, getHeightWithoutXAxis(), mAxisPaint);
             for (int k = 0; k < mChartData.getYValues().size(); k++) {
                 ChartData.YData yData = mChartData.getYValues().get(k);
-                if (!yData.isShown()) continue;
+                Pair<TextView, TextView> tvPair = mInfoPanelViewHolder.mLineValue.get(k);
+                Long yValue = yData.getValues().get(nearestIndexTouched);
+                if (!yData.isShown()) {
+                    tvPair.first.setVisibility(GONE);
+                    tvPair.second.setVisibility(GONE);
+                    continue;
+                } else {
+                    tvPair.first.setVisibility(VISIBLE);
+                    tvPair.second.setVisibility(VISIBLE);
+                    tvPair.second.setText(String.valueOf(yValue));
+                }
                 Paint paint = mPaints.get(yData.getVarName());
                 if (paint == null) {
                     throw new RuntimeException("There is no color info for " + yData.getVarName());
                 }
                 canvas.drawCircle(xValToDraw,
-                        getHeightWithoutXAxis() - yData.getValues().get(nearestIndexTouched) * yStep,
+                        getHeightWithoutXAxis() - yValue * yStep,
                         mAxisSelectedCircleSize, mTouchedCirclePaint);
                 canvas.drawCircle(xValToDraw,
-                        getHeightWithoutXAxis() - yData.getValues().get(nearestIndexTouched) * yStep,
+                        getHeightWithoutXAxis() - yValue * yStep,
                         mAxisSelectedCircleSize, paint);
             }
+
+            mInfoPanelViewHolder.mInfoViewTitle.setText(mChartData.getXStringValues().get(nearestIndexTouched));
+
+            int widthSpec = MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(ViewGroup.LayoutParams.WRAP_CONTENT), MeasureSpec.UNSPECIFIED);
+            int heightSpec = MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(ViewGroup.LayoutParams.WRAP_CONTENT), MeasureSpec.UNSPECIFIED);
+            mInfoPanelViewHolder.mInfoView.measure(widthSpec, heightSpec);
+            int infoWidth = mInfoPanelViewHolder.mInfoView.getMeasuredWidth();
+            mInfoPanelViewHolder.mInfoView.layout(0, 0, infoWidth, mInfoPanelViewHolder.mInfoView.getMeasuredHeight());
+            canvas.save();
+            float translateValue;
+            if (mTouchXValue > getWidth() / 2) {
+                translateValue = mTouchXValue - INFO_PANEL_SHIFT - infoWidth;
+            } else {
+                translateValue = mTouchXValue + INFO_PANEL_SHIFT;
+            }
+            canvas.translate(translateValue, INFO_PANEL_SHIFT);
+            mInfoPanelViewHolder.mInfoView.draw(canvas);
+            canvas.restore();
         }
 
 
@@ -384,18 +426,34 @@ public class ChartView extends View {
     }
 
     public void setChartData(ChartData data) {
+        LayoutInflater inflater = LayoutInflater.from(getContext());
+        ViewGroup infoView = (ViewGroup) inflater.inflate(R.layout.float_info_panel, null);
+        TextView infoViewTitle = infoView.findViewById(R.id.tvTitle);
+
         mChartData = data;
         mPaints.clear();
+        List<Pair<TextView, TextView>> valueViews = new ArrayList<>(mChartData.getYValues().size());
         for (ChartData.YData yData : mChartData.getYValues()) {
             Paint paint = new Paint();
 
-            paint.setColor(Color.parseColor(yData.getColor()));
+            int lineColor = Color.parseColor(yData.getColor());
+            paint.setColor(lineColor);
             paint.setStyle(Paint.Style.STROKE);
             paint.setFlags(Paint.ANTI_ALIAS_FLAG);
             paint.setStrokeWidth(4);
 
             mPaints.put(yData.getVarName(), paint);
+
+            TextView value = (TextView) inflater.inflate(R.layout.item_float_info_panel_value, infoView, false);
+            TextView axisName = (TextView) inflater.inflate(R.layout.item_float_info_panel_title, infoView, false);
+            value.setTextColor(lineColor);
+            axisName.setTextColor(lineColor);
+            axisName.setText(yData.getAlias());
+            valueViews.add(Pair.create(axisName, value));
+            infoView.addView(value);
+            infoView.addView(axisName);
         }
+        mInfoPanelViewHolder = new InfoPanelViewHolder(infoView, infoViewTitle, valueViews);
         invalidate();
     }
 
@@ -412,5 +470,17 @@ public class ChartView extends View {
 
     public interface Listener {
         void onViewTouched();
+    }
+
+    private class InfoPanelViewHolder {
+        ViewGroup mInfoView;
+        TextView mInfoViewTitle;
+        List<Pair<TextView, TextView>> mLineValue;
+
+        public InfoPanelViewHolder(ViewGroup infoView, TextView infoViewTitle, List<Pair<TextView, TextView>> lineValue) {
+            mInfoView = infoView;
+            mInfoViewTitle = infoViewTitle;
+            mLineValue = lineValue;
+        }
     }
 }

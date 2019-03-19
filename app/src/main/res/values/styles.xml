@@ -10,6 +10,8 @@
         <item name="axisChartTextColor">#96a2aa</item>
         <item name="axisChartColor">#f1f1f2</item>
         <item name="axisChartCouchedCircleFillColor">#fff</item>
+        <item name="infoDateTextColor">#000</item>
+        <item name="infoBgColor">#ffffff</item>
     </style>
 
     <style name="AppThemeDark" parent="android:Theme.Material">
@@ -22,6 +24,8 @@
         <item name="axisChartColor">#35434d</item>
         <item name="axisChartCouchedCircleFillColor">#161f2b</item>
         <item name="android:windowBackground">@color/windowBackgroundDark</item>
+        <item name="infoDateTextColor">#e5eff5</item>
+        <item name="infoBgColor">#202b38</item>
     </style>
 
 </resources>
