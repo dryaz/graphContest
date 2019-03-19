@@ -34,7 +34,7 @@ public class ChartView extends View {
     private static final int NUM_X_AXIS_MAX = 5;
     public static final int OFFSET_DRAW_NUM = 1;
     public static final int OFFSET_X_AXIS_DRAW_NUM = 8;
-    private static final int DISTANCE_THRESHOLD = 5;
+    private static final int DISTANCE_THRESHOLD = 4;
 
     private Path mPath = new Path();
     private Map<String, Paint> mPaints = new HashMap<>();
@@ -251,7 +251,7 @@ public class ChartView extends View {
             } else {
                 if (!mHideAnimation) {
                     // When we show new values we must be sure that opacity values still the same
-                    nextIndexToDrawXAxisValue = mPrevNextIndexToDraw;
+                    nextIndexToDrawXAxisValue = Math.max(mPrevNextIndexToDraw, 0);
                 }
                 nextIndexToDrawXAxisValueToAnimate = mPrevNextIndexToDraw;
             }
