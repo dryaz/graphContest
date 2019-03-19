@@ -23,7 +23,7 @@ import java.util.Map;
 
 /**
  * Class to to control displayed chart.
- *
+ * <p>
  * Some part is the same with {@link ChartView} but code is kept separate because
  * looks like it should be more flexible rather then common,
  * e.g. chart line toggling animation is different.
@@ -195,7 +195,7 @@ public class ChartControlView extends View {
         long elapsed = System.currentTimeMillis() - mStartToggleTime;
         float progress = 1;
         if (mLineToToggle != null) {
-            progress = (float) elapsed / TOGGLE_ANIM_DURATION;
+            progress = Math.min((float) elapsed / TOGGLE_ANIM_DURATION, 1);
         }
 
         float scale = (float) getWidth() / (mRightCurrentXBoarderValue - mLeftCurrentXBoarderValue);
@@ -222,11 +222,11 @@ public class ChartControlView extends View {
             maxPossibleYever = mLastMaxPossibleYever;
         }
 
-        float masPossibleYeverComputed =
-                mLastMaxPossibleYever + (maxPossibleYever - mLastMaxPossibleYever) * progress;
-        float yStep = (float) getHeight() / masPossibleYeverComputed;
 
         for (int k = 0; k < mChartData.getYValues().size(); k++) {
+            float masPossibleYeverComputed =
+                    mLastMaxPossibleYever + (maxPossibleYever - mLastMaxPossibleYever) * progress;
+
             mPath.reset();
             ChartData.YData yData = mChartData.getYValues().get(k);
 
@@ -241,6 +241,7 @@ public class ChartControlView extends View {
                     masPossibleYeverComputed = mLastMaxPossibleYever;
                 }
             }
+            float yStep = (float) getHeight() / masPossibleYeverComputed;
 
             mPath.moveTo((firstPointToShow * mStepXForMaxScale - translation) * scale,
                     getHeight() - yData.getValues().get(0) * yStep);
@@ -254,7 +255,6 @@ public class ChartControlView extends View {
                 throw new RuntimeException("There is no color info for " + yData.getVarName());
             }
 
-            int alpha = 255;
             if (yData.getVarName().equals(mLineToToggle)) {
                 if (yData.isShown()) {
                     paint.setAlpha(Math.min(((int) (255 * progress)), 255));
