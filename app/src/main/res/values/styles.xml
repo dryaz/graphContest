@@ -1,11 +1,27 @@
 <resources>
 
-    <!-- Base application theme. -->
-    <style name="AppTheme" parent="android:Theme.Material.Light">
-        <item name="android:colorPrimary">@color/colorPrimary</item>
-        <item name="android:colorPrimaryDark">@color/colorPrimaryDark</item>
-        <item name="android:textColorPrimary">@color/white</item>
-        <item name="android:textColorPrimaryInverse">@color/textColorPrimaryInverted</item>
+    <style name="AppThemeLight" parent="android:Theme.Material.Light">
+        <item name="android:colorPrimary">@color/colorPrimaryLight</item>
+        <item name="android:colorPrimaryDark">@color/colorPrimaryDarkLight</item>
+        <item name="android:textColorPrimary">@color/textColorPrimaryLight</item>
+        <item name="android:textColorPrimaryInverse">@color/textColorPrimaryInvertedLight</item>
+        <item name="android:windowBackground">@color/windowBackgroundLight</item>
+        <item name="bgChartColor">#fff</item>
+        <item name="axisChartTextColor">#96a2aa</item>
+        <item name="axisChartColor">#f1f1f2</item>
+        <item name="axisChartCouchedCircleFillColor">#fff</item>
+    </style>
+
+    <style name="AppThemeDark" parent="android:Theme.Material">
+        <item name="android:colorPrimary">@color/colorPrimaryDark</item>
+        <item name="android:colorPrimaryDark">@color/colorPrimaryDarkDark</item>
+        <item name="android:textColorPrimary">@color/textColorPrimaryDark</item>
+        <item name="android:textColorPrimaryInverse">@color/textColorPrimaryInvertedLight</item>
+        <item name="bgChartColor">#1d2733</item>
+        <item name="axisChartTextColor">#506372</item>
+        <item name="axisChartColor">#35434d</item>
+        <item name="axisChartCouchedCircleFillColor">#161f2b</item>
+        <item name="android:windowBackground">@color/windowBackgroundDark</item>
     </style>
 
 </resources>

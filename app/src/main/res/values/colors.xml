@@ -1,8 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#517da2</color>
-    <color name="colorPrimaryDark">#426382</color>
-    <color name="colorAccent">#ed685f</color>
-    <color name="textColorPrimaryInverted">#222222</color>
-    <color name="white">#fff</color>
+    <color name="colorPrimaryLight">#517da2</color>
+    <color name="colorPrimaryDarkLight">#426382</color>
+    <color name="colorAccentLight">#ed685f</color>
+    <color name="textColorPrimaryInvertedLight">#222222</color>
+    <color name="textColorPrimaryLight">#fff</color>
+    <color name="windowBackgroundLight">#f0f0f0</color>
+
+    <color name="colorPrimaryDark">#212d3b</color>
+    <color name="colorPrimaryDarkDark">#1a242e</color>
+    <color name="colorAccentDark">#76d672</color>
+    <color name="textColorPrimaryInvertedDark">#fff</color>
+    <color name="textColorPrimaryDark">#fff</color>
+    <color name="windowBackgroundDark">#151e27</color>
+
 </resources>

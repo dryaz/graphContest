@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <attr name="bgChartColor" format="reference|color" />
+    <attr name="axisChartTextColor" format="reference|color" />
+    <attr name="axisChartColor" format="reference|color" />
+    <attr name="axisChartCouchedCircleFillColor" format="reference|color" />
+</resources>

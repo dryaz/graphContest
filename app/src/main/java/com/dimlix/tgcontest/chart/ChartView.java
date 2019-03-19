@@ -1,11 +1,13 @@
 package com.dimlix.tgcontest.chart;
 
 import android.content.Context;
+import android.content.res.Resources;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.util.AttributeSet;
+import android.util.TypedValue;
 import android.view.MotionEvent;
 import android.view.View;
 
@@ -84,19 +86,25 @@ public class ChartView extends View {
         mAxisTextSize = getContext().getResources().getDimensionPixelSize(R.dimen.axis_text_size);
         mAxisSelectedCircleSize = getContext().getResources().getDimensionPixelSize(R.dimen.axis_selected_circle);
 
+        TypedValue typedValue = new TypedValue();
+        Resources.Theme theme = getContext().getTheme();
+        theme.resolveAttribute(R.attr.axisChartColor, typedValue, true);
+
         mAxisPaint = new Paint();
-        mAxisPaint.setColor(Color.GRAY);
+        mAxisPaint.setColor(typedValue.data);
         mAxisPaint.setAlpha(50);
         mAxisPaint.setStyle(Paint.Style.FILL);
         mAxisPaint.setStrokeWidth(mAxisWidth);
 
+        theme.resolveAttribute(R.attr.axisChartTextColor, typedValue, true);
         mAxisTextPaint = new Paint();
-        mAxisTextPaint.setColor(Color.GRAY);
+        mAxisTextPaint.setColor(typedValue.data);
         mAxisTextPaint.setTextSize(mAxisTextSize);
 
+        theme.resolveAttribute(R.attr.axisChartCouchedCircleFillColor, typedValue, true);
         mTouchedCirclePaint = new Paint();
         mTouchedCirclePaint.setStyle(Paint.Style.FILL);
-        mTouchedCirclePaint.setColor(Color.WHITE);
+        mTouchedCirclePaint.setColor(typedValue.data);
 
         setOnTouchListener(new OnTouchListener() {
             @Override
@@ -237,7 +245,7 @@ public class ChartView extends View {
         int nextIndexToDrawXAxisValueToAnimate = 0;
         int animatedStep = Math.max(mPrevLastXValuesStep, mLastXValuesStep);
         if (firstPointToShowForAxis != 0) {
-            nextIndexToDrawXAxisValue = (mLastXValuesStep - firstPointToShowForAxis % mLastXValuesStep) + firstPointToShowForAxis;
+            nextIndexToDrawXAxisValue = Math.max((mLastXValuesStep - firstPointToShowForAxis % mLastXValuesStep) + firstPointToShowForAxis, 0);
             if (mStartXAxisAnimTime == -1) {
                 mPrevNextIndexToDraw = nextIndexToDrawXAxisValue;
             } else {
