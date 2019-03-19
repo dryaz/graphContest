@@ -70,6 +70,8 @@ public class ChartView extends View {
 
     private float mTouchXValue = -1;
 
+    private Listener mListener;
+
     public ChartView(Context context) {
         super(context);
         init();
@@ -78,6 +80,10 @@ public class ChartView extends View {
     public ChartView(Context context, AttributeSet attrs) {
         super(context, attrs);
         init();
+    }
+
+    public void setListener(Listener listener) {
+        mListener = listener;
     }
 
     private void init() {
@@ -109,6 +115,9 @@ public class ChartView extends View {
         setOnTouchListener(new OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
+                if (mListener != null) {
+                    mListener.onViewTouched();
+                }
                 if (event.getAction() == MotionEvent.ACTION_DOWN
                         || event.getAction() == MotionEvent.ACTION_MOVE) {
                     mTouchXValue = event.getX();
@@ -399,5 +408,9 @@ public class ChartView extends View {
         mStartToggleTime = System.currentTimeMillis();
         mLineToToggle = yVarName;
         invalidate();
+    }
+
+    public interface Listener {
+        void onViewTouched();
     }
 }

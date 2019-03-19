@@ -2,12 +2,12 @@ package com.dimlix.tgcontest;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.ViewGroup;
+import android.widget.ScrollView;
 
 import com.dimlix.tgcontest.chart.ChartLayout;
 import com.dimlix.tgcontest.model.GraphData;
@@ -17,15 +17,17 @@ import java.io.InputStream;
 
 public class MainActivity extends Activity {
 
+    public static final String THEME = "THEME";
     private boolean mIsLightTheme = true;
+
+    private ScrollView mScrollView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if (savedInstanceState != null) {
-            mIsLightTheme = savedInstanceState.getBoolean("THEME", true);
+            mIsLightTheme = savedInstanceState.getBoolean(THEME, true);
         }
-        Log.e("!@#", " " + mIsLightTheme );
         if (mIsLightTheme) {
             setTheme(R.style.AppThemeLight);
         } else {
@@ -33,11 +35,19 @@ public class MainActivity extends Activity {
         }
         setContentView(R.layout.activity_main);
 
+        mScrollView = findViewById(R.id.scroll);
+
         GraphData graphData = new JsonGraphReader().getGraphDataFromJson(loadGraphJSONFromAsset());
         LayoutInflater inflater = LayoutInflater.from(this);
         ViewGroup container = findViewById(R.id.container);
-        for (int i = 0; i < 1/*graphData.getChartData().size() */; i++) {
+        for (int i = 0; i < graphData.getChartData().size(); i++) {
             ChartLayout chartView = (ChartLayout) inflater.inflate(R.layout.item_chart, container, false);
+            chartView.setListener(new ChartLayout.Listener() {
+                @Override
+                public void onInnerViewTouched() {
+                    mScrollView.requestDisallowInterceptTouchEvent(true);
+                }
+            });
             chartView.setData(graphData.getChartData().get(i));
             container.addView(chartView);
         }
@@ -69,7 +79,7 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onSaveInstanceState(Bundle outState) {
-        outState.putBoolean("THEME", mIsLightTheme);
+        outState.putBoolean(THEME, mIsLightTheme);
         super.onSaveInstanceState(outState);
     }
 

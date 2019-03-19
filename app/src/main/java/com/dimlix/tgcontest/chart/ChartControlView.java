@@ -102,6 +102,10 @@ public class ChartControlView extends View {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
 
+                if (mListener != null) {
+                    mListener.onViewTouched();
+                }
+
                 if (event.getAction() == MotionEvent.ACTION_UP) {
                     mCurrentMode = TouchMode.NONE;
                 }
@@ -324,5 +328,7 @@ public class ChartControlView extends View {
 
     public interface Listener {
         void onBoarderChange(int left, int right);
+
+        void onViewTouched();
     }
 }

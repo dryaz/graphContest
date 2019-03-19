@@ -30,6 +30,8 @@ public class ChartLayout extends LinearLayout implements CompoundButton.OnChecke
     private List<CheckBox> mCheckBoxes = new ArrayList<>();
     private ChartData mData;
 
+    private Listener mListener;
+
     public ChartLayout(Context context) {
         super(context);
         init(context);
@@ -50,6 +52,22 @@ public class ChartLayout extends LinearLayout implements CompoundButton.OnChecke
             @Override
             public void onBoarderChange(int left, int right) {
                 mChartView.setMaxVisibleRegionPercent(left, right);
+            }
+
+            @Override
+            public void onViewTouched() {
+                if (mListener != null) {
+                    mListener.onInnerViewTouched();
+                }
+            }
+        });
+
+        mChartView.setListener(new ChartView.Listener() {
+            @Override
+            public void onViewTouched() {
+                if (mListener != null) {
+                    mListener.onInnerViewTouched();
+                }
             }
         });
     }
@@ -99,5 +117,13 @@ public class ChartLayout extends LinearLayout implements CompoundButton.OnChecke
         }
         mChartView.onYChartToggled(yVarName);
         mChartControlView.onYChartToggled(yVarName);
+    }
+
+    public void setListener(Listener listener) {
+        mListener = listener;
+    }
+
+    public interface Listener {
+        void onInnerViewTouched();
     }
 }
