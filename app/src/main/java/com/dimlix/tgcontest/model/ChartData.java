@@ -1,11 +1,17 @@
 package com.dimlix.tgcontest.model;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 public class ChartData {
     private List<Long> mXValues;
+    private List<String> mXStringValues = new ArrayList<>();
     private List<YData> mYValues = new ArrayList<>();
+    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("MMM dd", Locale.US);
+
 
     public void addYValues(YData data) {
         mYValues.add(data);
@@ -17,6 +23,15 @@ public class ChartData {
 
     public List<Long> getXValues() {
         return mXValues;
+    }
+
+    public List<String> getXStringValues() {
+        if (mXStringValues.isEmpty()) {
+            for (int i = 0; i < mXValues.size(); i++) {
+                mXStringValues.add(DATE_FORMAT.format(new Date(mXValues.get(i))));
+            }
+        }
+        return mXStringValues;
     }
 
     public void setXValues(List<Long> mXValues) {

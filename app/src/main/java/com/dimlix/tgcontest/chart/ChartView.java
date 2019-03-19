@@ -30,6 +30,11 @@ public class ChartView extends View {
     // When user change view region chart y axis is animated with this duration.
     private static final int SHIFT_ANIM_DURATION = 100;
     private static final int NUM_HOR_AXIS = 6;
+    private static final int NUM_X_AXIS_MIN = 3;
+    private static final int NUM_X_AXIS_MAX = 5;
+    public static final int OFFSET_DRAW_NUM = 1;
+    public static final int OFFSET_X_AXIS_DRAW_NUM = 8;
+    private static final int DISTANCE_THRESHOLD = 5;
 
     private Path mPath = new Path();
     private Map<String, Paint> mPaints = new HashMap<>();
@@ -46,8 +51,13 @@ public class ChartView extends View {
     private ChartData mChartData = null;
 
     private long mStartToggleTime = -1;
+    private long mStartXAxisAnimTime = -1;
     // Needs to animate chart when user toggle line/
     private long mLastMaxPossibleYever;
+    private int mLastXValuesStep = -1;
+    private int mPrevLastXValuesStep = -1;
+    private int mPrevNextIndexToDraw = -1;
+    private boolean mHideAnimation = false;
 
     private Paint mAxisPaint;
     private Paint mAxisTextPaint;
@@ -56,6 +66,9 @@ public class ChartView extends View {
     private int mAxisWidth;
     private int mAxisTextSize;
     private int mAxisSelectedCircleSize;
+
+    private int mAxisXHeight;
+    private int mPrevDistance;
 
     private float mTouchXValue = -1;
 
@@ -71,6 +84,7 @@ public class ChartView extends View {
 
     private void init() {
         mAxisWidth = getContext().getResources().getDimensionPixelSize(R.dimen.axis_width);
+        mAxisXHeight = getContext().getResources().getDimensionPixelSize(R.dimen.axis_x_height);
         mAxisTextSize = getContext().getResources().getDimensionPixelSize(R.dimen.axis_text_size);
         mAxisSelectedCircleSize = getContext().getResources().getDimensionPixelSize(R.dimen.axis_selected_circle);
 
@@ -115,14 +129,14 @@ public class ChartView extends View {
             // Chart range is not set yet.
             return;
         }
-
+        mAxisTextPaint.setAlpha(255);
         // Draw chart lines
         float scale = (float) getWidth() / (mRightCurrentXBoarderValue - mLeftCurrentXBoarderValue);
         float translation = mLeftCurrentXBoarderValue;
 
         int firstPointToShow =
-                Math.max((int) Math.floor(mLeftCurrentXBoarderValue / mStepXForMaxScale) - 1, 0);
-        int lastPointToShow = Math.min((int) Math.floor(mRightCurrentXBoarderValue / mStepXForMaxScale) + 1,
+                Math.max((int) Math.floor(mLeftCurrentXBoarderValue / mStepXForMaxScale) - OFFSET_DRAW_NUM, 0);
+        int lastPointToShow = Math.min((int) Math.floor(mRightCurrentXBoarderValue / mStepXForMaxScale) + OFFSET_DRAW_NUM,
                 mChartData.getSize() - 1);
 
         long maxPossibleYever = 0;
@@ -141,22 +155,22 @@ public class ChartView extends View {
             maxPossibleYever = mLastMaxPossibleYever;
         }
 
-        float progress = 1;
+        float lineToggleProgress = 1;
         if (mLineToToggle != null || maxPossibleYever != mLastMaxPossibleYever) {
             if (mStartToggleTime == -1) {
                 mStartToggleTime = System.currentTimeMillis();
             }
             long elapsed = System.currentTimeMillis() - mStartToggleTime;
             if (mLineToToggle != null) {
-                progress = (float) elapsed / TOGGLE_ANIM_DURATION;
+                lineToggleProgress = Math.min((float) elapsed / TOGGLE_ANIM_DURATION, 1);
             } else {
-                progress = (float) elapsed / SHIFT_ANIM_DURATION;
+                lineToggleProgress = Math.min((float) elapsed / SHIFT_ANIM_DURATION, 1);
             }
         }
 
         float masPossibleYeverComputed =
-                mLastMaxPossibleYever + (maxPossibleYever - mLastMaxPossibleYever) * progress;
-        float yStep = (float) getHeight() / masPossibleYeverComputed;
+                mLastMaxPossibleYever + (maxPossibleYever - mLastMaxPossibleYever) * lineToggleProgress;
+        float yStep = (float) getHeightWithoutXAxis() / masPossibleYeverComputed;
 
         for (int k = 0; k < mChartData.getYValues().size(); k++) {
             mPath.reset();
@@ -170,10 +184,10 @@ public class ChartView extends View {
             }
 
             mPath.moveTo((firstPointToShow * mStepXForMaxScale - translation) * scale,
-                    getHeight() - yData.getValues().get(0) * yStep);
+                    getHeightWithoutXAxis() - yData.getValues().get(0) * yStep);
             for (int i = firstPointToShow + 1; i <= lastPointToShow; i++) {
                 mPath.lineTo((i * mStepXForMaxScale - translation) * scale,
-                        getHeight() - yData.getValues().get(i) * yStep);
+                        getHeightWithoutXAxis() - yData.getValues().get(i) * yStep);
             }
 
             Paint paint = mPaints.get(yData.getVarName());
@@ -183,30 +197,109 @@ public class ChartView extends View {
 
             if (yData.getVarName().equals(mLineToToggle)) {
                 if (yData.isShown()) {
-                    paint.setAlpha(Math.min(((int) (255 * progress)), 255));
+                    paint.setAlpha(Math.min(((int) (255 * lineToggleProgress)), 255));
                 } else {
-                    paint.setAlpha(Math.max((int) (255 * (1 - progress)), 0));
+                    paint.setAlpha(Math.max((int) (255 * (1 - lineToggleProgress)), 0));
                 }
             }
 
             canvas.drawPath(mPath, paint);
         }
 
-        // Draw chart axis
+        // Draw chart Y axis
         int yAxisStep = Math.round((float) maxPossibleYever / NUM_HOR_AXIS);
-        int yDistance = getHeight() / (NUM_HOR_AXIS);
+        int yDistance = getHeightWithoutXAxis() / (NUM_HOR_AXIS);
         for (int i = 0; i < NUM_HOR_AXIS; i++) {
-            canvas.drawLine(0, getHeight() - mAxisWidth - yDistance * i,
-                    getWidth(), getHeight() - mAxisWidth - yDistance * i, mAxisPaint);
+            canvas.drawLine(0, getHeightWithoutXAxis() - mAxisWidth - yDistance * i,
+                    getWidth(), getHeightWithoutXAxis() - mAxisWidth - yDistance * i, mAxisPaint);
             canvas.drawText(String.valueOf(yAxisStep * i), 0,
-                    getHeight() - mAxisWidth - yDistance * i - mAxisTextSize / 2, mAxisTextPaint);
+                    getHeightWithoutXAxis() - mAxisWidth - yDistance * i - mAxisTextSize / 2, mAxisTextPaint);
         }
 
+        //Draw chart X axis
+        int firstPointToShowForAxis = Math.max(firstPointToShow - OFFSET_X_AXIS_DRAW_NUM, 0);
+        int lastPointToShowForAxis = Math.min(lastPointToShow + OFFSET_X_AXIS_DRAW_NUM, mChartData.getSize() - 1);
+        int distance = lastPointToShow - firstPointToShow;
+        if (mLastXValuesStep == -1) {
+            mLastXValuesStep = Integer.highestOneBit(distance / NUM_X_AXIS_MAX - 1) * 2;
+            mPrevLastXValuesStep = mLastXValuesStep;
+            mPrevDistance = distance;
+        } else if (distance / mLastXValuesStep < NUM_X_AXIS_MIN
+                && Math.abs(distance - mPrevDistance) > DISTANCE_THRESHOLD) {
+            mPrevLastXValuesStep = mLastXValuesStep;
+            mLastXValuesStep /= 2;
+            mStartXAxisAnimTime = System.currentTimeMillis();
+            mHideAnimation = false;
+        } else if (distance / mLastXValuesStep > NUM_X_AXIS_MAX
+                && Math.abs(distance - mPrevDistance) > DISTANCE_THRESHOLD) {
+            mPrevLastXValuesStep = mLastXValuesStep;
+            mLastXValuesStep *= 2;
+            mStartXAxisAnimTime = System.currentTimeMillis();
+            mHideAnimation = true;
+        }
+        int nextIndexToDrawXAxisValue = 0;
+        int nextIndexToDrawXAxisValueToAnimate = 0;
+        int animatedStep = Math.max(mPrevLastXValuesStep, mLastXValuesStep);
+        if (firstPointToShowForAxis != 0) {
+            nextIndexToDrawXAxisValue = (mLastXValuesStep - firstPointToShowForAxis % mLastXValuesStep) + firstPointToShowForAxis;
+            if (mStartXAxisAnimTime == -1) {
+                mPrevNextIndexToDraw = nextIndexToDrawXAxisValue;
+            } else {
+                if (!mHideAnimation) {
+                    // When we show new values we must be sure that opacity values still the same
+                    nextIndexToDrawXAxisValue = mPrevNextIndexToDraw;
+                }
+                nextIndexToDrawXAxisValueToAnimate = mPrevNextIndexToDraw;
+            }
+        }
+
+        float xAxisValuesProgress = 1;
+
+        if (mStartXAxisAnimTime != -1) {
+            if (Math.abs(nextIndexToDrawXAxisValueToAnimate - nextIndexToDrawXAxisValue) == animatedStep
+                    || nextIndexToDrawXAxisValueToAnimate == nextIndexToDrawXAxisValue) {
+                nextIndexToDrawXAxisValueToAnimate -= animatedStep / 2;
+            }
+            if (nextIndexToDrawXAxisValueToAnimate < 0) {
+                nextIndexToDrawXAxisValueToAnimate += animatedStep;
+            }
+
+            long elapsed = System.currentTimeMillis() - mStartXAxisAnimTime;
+            xAxisValuesProgress = Math.min((float) elapsed / TOGGLE_ANIM_DURATION, 1);
+            if (mHideAnimation) {
+                int alpha = Math.max((int) (255 * (1 - xAxisValuesProgress)), 0);
+                mAxisTextPaint.setAlpha(alpha);
+            } else {
+                int alpha = Math.min(((int) (255 * xAxisValuesProgress)), 255);
+                mAxisTextPaint.setAlpha(alpha);
+
+            }
+            while (nextIndexToDrawXAxisValueToAnimate < lastPointToShowForAxis) {
+                String text = mChartData.getXStringValues().get(nextIndexToDrawXAxisValueToAnimate);
+                canvas.drawText(text,
+                        (nextIndexToDrawXAxisValueToAnimate * mStepXForMaxScale - translation) * scale,
+                        getHeight() - (float) mAxisTextSize / 2, mAxisTextPaint);
+                nextIndexToDrawXAxisValueToAnimate += animatedStep;
+            }
+        }
+
+        while (nextIndexToDrawXAxisValue < lastPointToShowForAxis) {
+            mAxisTextPaint.setAlpha(255);
+            String text = mChartData.getXStringValues().get(nextIndexToDrawXAxisValue);
+            canvas.drawText(text,
+                    (nextIndexToDrawXAxisValue * mStepXForMaxScale - translation) * scale,
+                    getHeight() - (float) mAxisTextSize / 2, mAxisTextPaint);
+            if (xAxisValuesProgress < 1) {
+                nextIndexToDrawXAxisValue += animatedStep;
+            } else {
+                nextIndexToDrawXAxisValue += mLastXValuesStep;
+            }
+        }
         // Draw info about touched section
         if (mTouchXValue > 0) {
             int nearestIndexTouched = Math.round((mTouchXValue / scale + translation) / mStepXForMaxScale);
             float xValToDraw = (nearestIndexTouched * mStepXForMaxScale - translation) * scale;
-            canvas.drawLine(xValToDraw, 0, xValToDraw, getHeight(), mAxisPaint);
+            canvas.drawLine(xValToDraw, 0, xValToDraw, getHeightWithoutXAxis(), mAxisPaint);
             for (int k = 0; k < mChartData.getYValues().size(); k++) {
                 ChartData.YData yData = mChartData.getYValues().get(k);
                 if (!yData.isShown()) continue;
@@ -215,20 +308,22 @@ public class ChartView extends View {
                     throw new RuntimeException("There is no color info for " + yData.getVarName());
                 }
                 canvas.drawCircle(xValToDraw,
-                        getHeight() - yData.getValues().get(nearestIndexTouched) * yStep,
+                        getHeightWithoutXAxis() - yData.getValues().get(nearestIndexTouched) * yStep,
                         mAxisSelectedCircleSize, mTouchedCirclePaint);
                 canvas.drawCircle(xValToDraw,
-                        getHeight() - yData.getValues().get(nearestIndexTouched) * yStep,
+                        getHeightWithoutXAxis() - yData.getValues().get(nearestIndexTouched) * yStep,
                         mAxisSelectedCircleSize, paint);
             }
         }
 
 
         // Run draw loop in case animation is running.
-        if (progress < 1) {
+        if (lineToggleProgress < 1 || xAxisValuesProgress < 1) {
             invalidate();
         } else {
+            mStartXAxisAnimTime = -1;
             mStartToggleTime = -1;
+            mPrevLastXValuesStep = mLastXValuesStep;
             if (mLineToToggle != null || mLastMaxPossibleYever != maxPossibleYever) {
                 mLastMaxPossibleYever = maxPossibleYever;
                 mLineToToggle = null;
@@ -236,6 +331,10 @@ public class ChartView extends View {
             }
         }
 
+    }
+
+    private int getHeightWithoutXAxis() {
+        return getHeight() - mAxisXHeight;
     }
 
     /**
