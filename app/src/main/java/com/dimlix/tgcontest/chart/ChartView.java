@@ -157,6 +157,7 @@ class ChartView extends View {
             return;
         }
         mAxisTextPaint.setAlpha(255);
+        mAxisPaint.setAlpha(MAX_AXIS_ALPHA);
         // Draw chart lines
         float scale = (float) getWidth() / (mRightCurrentXBoarderValue - mLeftCurrentXBoarderValue);
         float translation = mLeftCurrentXBoarderValue;
@@ -261,7 +262,7 @@ class ChartView extends View {
             if (i > 0) {
                 y += (animDirection * (lineToggleProgress - 1) * yDistance) * i;
             }
-            if (mLastMaxPossibleYever != maxPossibleYever) {
+            if (mLastMaxPossibleYever != maxPossibleYever && i > 0) {
                 mAxisTextPaint.setAlpha((int) ((lineToggleProgress) * 255));
                 mAxisPaint.setAlpha((int) ((lineToggleProgress) * MAX_AXIS_ALPHA));
             }
