@@ -3,6 +3,8 @@ package com.dimlix.tgcontest.chart;
 import android.content.Context;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
+import android.os.Bundle;
+import android.os.Parcelable;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -14,7 +16,11 @@ import com.dimlix.tgcontest.R;
 import com.dimlix.tgcontest.model.ChartData;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Basic layout that contains {@link ChartView} that displays chart
@@ -31,6 +37,11 @@ public class ChartLayout extends LinearLayout implements CompoundButton.OnChecke
     private ChartData mData;
 
     private Listener mListener;
+
+    private int mLeftBoarder = 0;
+    private int mRightBoarder = MAX_DISCRETE_PROGRESS;
+    private Map<String, CompoundButton> mChartCheckboxes;
+    private Set<String> mDisbledCharts;
 
     public ChartLayout(Context context) {
         super(context);
@@ -51,7 +62,7 @@ public class ChartLayout extends LinearLayout implements CompoundButton.OnChecke
         mChartControlView.setListener(new ChartControlView.Listener() {
             @Override
             public void onBoarderChange(int left, int right) {
-                mChartView.setMaxVisibleRegionPercent(left, right);
+                setRegion(left, right);
             }
 
             @Override
@@ -72,16 +83,25 @@ public class ChartLayout extends LinearLayout implements CompoundButton.OnChecke
         });
     }
 
+    private void setRegion(int left, int right) {
+        mLeftBoarder = left;
+        mRightBoarder = right;
+        mChartView.setMaxVisibleRegionPercent(mLeftBoarder, mRightBoarder);
+    }
+
     public void setData(ChartData data) {
         mData = data;
         mChartView.setChartData(data);
         mChartControlView.setChartData(data);
 
-        int min = 0;
-        int max = MAX_DISCRETE_PROGRESS;
+        int min = mLeftBoarder;
+        int max = mRightBoarder;
         mChartView.setMaxVisibleRegionPercent(min, max);
 
         mChartControlView.setMinMax(min, max);
+
+        mChartCheckboxes = new HashMap<>(data.getYValues().size());
+        mDisbledCharts = new HashSet<>(data.getYValues().size());
 
         for (CheckBox checkBox : mCheckBoxes) {
             checkBox.setOnCheckedChangeListener(null);
@@ -95,6 +115,7 @@ public class ChartLayout extends LinearLayout implements CompoundButton.OnChecke
         int count = 0;
         for (ChartData.YData yData : data.getYValues()) {
             CheckBox checkbox = (CheckBox) inflater.inflate(R.layout.chart_checkbox, null);
+            mChartCheckboxes.put(yData.getVarName(), checkbox);
             int colors[] = {Color.parseColor(yData.getColor()), Color.BLACK};
             checkbox.setButtonTintList(new ColorStateList(states, colors));
             checkbox.setText(yData.getAlias());
@@ -115,6 +136,11 @@ public class ChartLayout extends LinearLayout implements CompoundButton.OnChecke
         for (ChartData.YData yData : mData.getYValues()) {
             if (yData.getVarName().equals(yVarName)) {
                 yData.setShown(isChecked);
+                if (!isChecked) {
+                    mDisbledCharts.add(yData.getVarName());
+                } else {
+                    mDisbledCharts.remove(yData.getVarName());
+                }
             }
         }
         mChartView.onYChartToggled(yVarName);
@@ -127,5 +153,43 @@ public class ChartLayout extends LinearLayout implements CompoundButton.OnChecke
 
     public interface Listener {
         void onInnerViewTouched();
+    }
+
+    @Override
+    public Parcelable onSaveInstanceState() {
+        Bundle bundle = new Bundle();
+        bundle.putParcelable("superState", super.onSaveInstanceState());
+        bundle.putInt("left", mLeftBoarder);
+        bundle.putInt("right", mRightBoarder);
+        String[] disableCharts = new String[mDisbledCharts.size()];
+        mDisbledCharts.toArray(disableCharts);
+        bundle.putStringArray("disableCharts", disableCharts);
+        return bundle;
+    }
+
+    @Override
+    public void onRestoreInstanceState(Parcelable state) {
+        if (state instanceof Bundle) // implicit null check
+        {
+            setAnimationEnabled(false);
+            Bundle bundle = (Bundle) state;
+            mChartControlView.setMinMax(bundle.getInt("left"), bundle.getInt("right"));
+            for (String yVarName : bundle.getStringArray("disableCharts")) {
+                mChartCheckboxes.get(yVarName).setChecked(false);
+            }
+            mChartControlView.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    setAnimationEnabled(true);
+                }
+            }, 100);
+            state = bundle.getParcelable("superState");
+        }
+        super.onRestoreInstanceState(state);
+    }
+
+    private void setAnimationEnabled(boolean isEnabled) {
+        mChartControlView.setAnimationsEnabled(isEnabled);
+        mChartView.setAnimationsEnabled(isEnabled);
     }
 }

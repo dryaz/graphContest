@@ -24,7 +24,7 @@ import java.util.Map;
  * looks like it should be more flexible rather then common,
  * e.g. chart line toggling animation is different.
  */
-public class ChartControlView extends View {
+class ChartControlView extends View {
     // Animation duration for switching chart lies on/off
     private static final int TOGGLE_ANIM_DURATION = 300;
     // Distance between left and right draggable controls
@@ -70,6 +70,8 @@ public class ChartControlView extends View {
     // Draggable control width and touch zone could be different, guidelines says to use at least
     // 48dp for touch objects but as per design width is different.
     private int mDragZoneTouchWidth;
+
+    private boolean mIsAnimationsEnabled = true;
 
     @TouchMode
     private int mCurrentMode = TouchMode.NONE;
@@ -188,7 +190,7 @@ public class ChartControlView extends View {
 
         long elapsed = System.currentTimeMillis() - mStartToggleTime;
         float progress = 1;
-        if (mLineToToggle != null) {
+        if (mLineToToggle != null && mIsAnimationsEnabled) {
             progress = Math.min((float) elapsed / TOGGLE_ANIM_DURATION, 1);
         }
 
@@ -318,6 +320,10 @@ public class ChartControlView extends View {
         mRightCurrentXBoarderValue = getWidth();
 
         invalidate();
+    }
+
+    public void setAnimationsEnabled(boolean animationsEnabled) {
+        mIsAnimationsEnabled = animationsEnabled;
     }
 
     /**

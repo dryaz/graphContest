@@ -1,5 +1,7 @@
 package com.dimlix.tgcontest.model;
 
+import android.util.Pair;
+
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -8,9 +10,10 @@ import java.util.Locale;
 
 public class ChartData {
     private List<Long> mXValues;
-    private List<String> mXStringValues = new ArrayList<>();
+    private List<Pair<String, String>> mXStringValues = new ArrayList<>();
     private List<YData> mYValues = new ArrayList<>();
-    private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("MMM dd", Locale.US);
+    private static final SimpleDateFormat SHORT_DATE_FORMAT = new SimpleDateFormat("MMM dd", Locale.US);
+    private static final SimpleDateFormat LONG_DATE_FORMAT = new SimpleDateFormat("EEE, MMM dd", Locale.US);
 
 
     public void addYValues(YData data) {
@@ -25,10 +28,11 @@ public class ChartData {
         return mXValues;
     }
 
-    public List<String> getXStringValues() {
+    public List<Pair<String, String>> getXStringValues() {
         if (mXStringValues.isEmpty()) {
             for (int i = 0; i < mXValues.size(); i++) {
-                mXStringValues.add(DATE_FORMAT.format(new Date(mXValues.get(i))));
+                mXStringValues.add(Pair.create(SHORT_DATE_FORMAT.format(new Date(mXValues.get(i))),
+                        LONG_DATE_FORMAT.format(new Date(mXValues.get(i)))));
             }
         }
         return mXStringValues;

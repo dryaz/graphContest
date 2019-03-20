@@ -37,11 +37,14 @@ public class MainActivity extends Activity {
 
         mScrollView = findViewById(R.id.scroll);
 
+        // TODO persist data across activity recreations, make graphData parcable
         GraphData graphData = new JsonGraphReader().getGraphDataFromJson(loadGraphJSONFromAsset());
         LayoutInflater inflater = LayoutInflater.from(this);
         ViewGroup container = findViewById(R.id.container);
         for (int i = 0; i < graphData.getChartData().size(); i++) {
             ChartLayout chartView = (ChartLayout) inflater.inflate(R.layout.item_chart, container, false);
+            // Need to set ID to restore state (without ID will be the same state for all views)
+            chartView.setId(i);
             chartView.setListener(new ChartLayout.Listener() {
                 @Override
                 public void onInnerViewTouched() {

@@ -29,8 +29,11 @@ import java.util.Map;
  * Some part is the same with {@link ChartControlView} but code is kept separate because
  * looks like it should be more flexible rather then common,
  * e.g. chart line toggling animation is different.
+ * <p>
+ * Package protected class, use ChartLayout as a single ViewGroup which contains both
+ * {@link ChartView} and {@link ChartControlView}.
  */
-public class ChartView extends View {
+class ChartView extends View {
 
     private static final int TOGGLE_ANIM_DURATION = 300;
     // When user change view region chart y axis is animated with this duration.
@@ -58,7 +61,7 @@ public class ChartView extends View {
     private long mStartToggleTime = -1;
     private long mStartXAxisAnimTime = -1;
     // Needs to animate chart when user toggle line/
-    private long mLastMaxPossibleYever;
+    private long mLastMaxPossibleYever = -1;
     private int mLastXValuesStep = -1;
     private int mPrevLastXValuesStep = -1;
     private int mPrevNextIndexToDraw = -1;
@@ -80,6 +83,8 @@ public class ChartView extends View {
     private Listener mListener;
 
     private InfoPanelViewHolder mInfoPanelViewHolder;
+
+    private boolean mIsAnimationsEnabled = true;
 
     public ChartView(Context context) {
         super(context);
@@ -172,13 +177,18 @@ public class ChartView extends View {
             }
         }
 
+        if (mLastMaxPossibleYever == -1) {
+            mLastMaxPossibleYever = maxPossibleYever;
+        }
+
         if (maxPossibleYever == 0) {
             // Prevent single line from flying up
             maxPossibleYever = mLastMaxPossibleYever;
         }
 
         float lineToggleProgress = 1;
-        if (mLineToToggle != null || maxPossibleYever != mLastMaxPossibleYever) {
+        if (mIsAnimationsEnabled
+                && (mLineToToggle != null || maxPossibleYever != mLastMaxPossibleYever)) {
             if (mStartToggleTime == -1) {
                 mStartToggleTime = System.currentTimeMillis();
             }
@@ -287,7 +297,7 @@ public class ChartView extends View {
 
         float xAxisValuesProgress = 1;
 
-        if (mStartXAxisAnimTime != -1) {
+        if (mStartXAxisAnimTime != -1 && mIsAnimationsEnabled) {
             if (Math.abs(nextIndexToDrawXAxisValueToAnimate - nextIndexToDrawXAxisValue) == animatedStep
                     || nextIndexToDrawXAxisValueToAnimate == nextIndexToDrawXAxisValue) {
                 nextIndexToDrawXAxisValueToAnimate -= animatedStep / 2;
@@ -307,7 +317,7 @@ public class ChartView extends View {
 
             }
             while (nextIndexToDrawXAxisValueToAnimate < lastPointToShowForAxis) {
-                String text = mChartData.getXStringValues().get(nextIndexToDrawXAxisValueToAnimate);
+                String text = mChartData.getXStringValues().get(nextIndexToDrawXAxisValueToAnimate).first;
                 canvas.drawText(text,
                         (nextIndexToDrawXAxisValueToAnimate * mStepXForMaxScale - translation) * scale,
                         getHeight() - (float) mAxisTextSize / 2, mAxisTextPaint);
@@ -317,7 +327,7 @@ public class ChartView extends View {
 
         while (nextIndexToDrawXAxisValue < lastPointToShowForAxis) {
             mAxisTextPaint.setAlpha(255);
-            String text = mChartData.getXStringValues().get(nextIndexToDrawXAxisValue);
+            String text = mChartData.getXStringValues().get(nextIndexToDrawXAxisValue).first;
             canvas.drawText(text,
                     (nextIndexToDrawXAxisValue * mStepXForMaxScale - translation) * scale,
                     getHeight() - (float) mAxisTextSize / 2, mAxisTextPaint);
@@ -362,7 +372,7 @@ public class ChartView extends View {
                         mAxisSelectedCircleSize, paint);
             }
 
-            mInfoPanelViewHolder.mInfoViewTitle.setText(mChartData.getXStringValues().get(nearestIndexTouched));
+            mInfoPanelViewHolder.mInfoViewTitle.setText(mChartData.getXStringValues().get(nearestIndexTouched).second);
 
             int widthSpec = MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(ViewGroup.LayoutParams.WRAP_CONTENT), MeasureSpec.UNSPECIFIED);
             int heightSpec = MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(ViewGroup.LayoutParams.WRAP_CONTENT), MeasureSpec.UNSPECIFIED);
@@ -469,6 +479,10 @@ public class ChartView extends View {
         }
         mInfoPanelViewHolder = new InfoPanelViewHolder(infoView, infoViewTitle, valueViews);
         invalidate();
+    }
+
+    public void setAnimationsEnabled(boolean animationsEnabled) {
+        mIsAnimationsEnabled = animationsEnabled;
     }
 
     /**
