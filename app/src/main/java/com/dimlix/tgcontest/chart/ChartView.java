@@ -36,7 +36,7 @@ class ChartView extends View {
 
     private static final int TOGGLE_ANIM_DURATION = 300;
     // When user change view region chart y axis is animated with this duration.
-    private static final int SHIFT_ANIM_DURATION = 100;
+    private static final int SHIFT_ANIM_DURATION = 150;
     private static final int NUM_HOR_AXIS = 6;
     private static final int NUM_X_AXIS_MIN = 3;
     private static final int NUM_X_AXIS_MAX = 5;
@@ -44,6 +44,7 @@ class ChartView extends View {
     public static final int OFFSET_X_AXIS_DRAW_NUM = 8;
     private static final int DISTANCE_THRESHOLD = 4;
     public static final int INFO_PANEL_SHIFT = 50;
+    public static final int MAX_AXIS_ALPHA = 70;
 
     private float[] mPathPoints;
     private Map<String, Paint> mPaints = new HashMap<>();
@@ -111,7 +112,7 @@ class ChartView extends View {
 
         mAxisPaint = new Paint();
         mAxisPaint.setColor(typedValue.data);
-        mAxisPaint.setAlpha(70);
+        mAxisPaint.setAlpha(MAX_AXIS_ALPHA);
         mAxisPaint.setStyle(Paint.Style.FILL);
         mAxisPaint.setStrokeWidth(mAxisWidth);
 
@@ -245,6 +246,7 @@ class ChartView extends View {
 
         // Draw chart Y axis
         int yAxisStep = Math.round((float) maxPossibleYever / NUM_HOR_AXIS);
+        int prevYAxisStep = Math.round((float) mLastMaxPossibleYever / NUM_HOR_AXIS);
         int yDistance = getHeightWithoutXAxis() / (NUM_HOR_AXIS);
         byte animDirection;
         if (mLastMaxPossibleYever > maxPossibleYever) {
@@ -257,10 +259,24 @@ class ChartView extends View {
         for (int i = 0; i < NUM_HOR_AXIS; i++) {
             int y = (getHeightWithoutXAxis() - mAxisWidth - yDistance * i);
             if (i > 0) {
-                y += (animDirection * (lineToggleProgress - 1) * yDistance);
+                y += (animDirection * (lineToggleProgress - 1) * yDistance) * i;
+            }
+            if (mLastMaxPossibleYever != maxPossibleYever) {
+                mAxisTextPaint.setAlpha((int) ((lineToggleProgress) * 255));
+                mAxisPaint.setAlpha((int) ((lineToggleProgress) * MAX_AXIS_ALPHA));
             }
             canvas.drawLine(0, y, getWidth(), y, mAxisPaint);
             canvas.drawText(Utils.coolFormat(yAxisStep * i), 0, y - (float) mAxisTextSize / 2, mAxisTextPaint);
+            if (mLastMaxPossibleYever != maxPossibleYever) {
+                int yOfPrev = (getHeightWithoutXAxis() - mAxisWidth - yDistance * i);
+                if (i > 0) {
+                    yOfPrev += (animDirection * (lineToggleProgress) * yDistance) * i;
+                    mAxisTextPaint.setAlpha((int) ((1 - lineToggleProgress) * 255));
+                    mAxisPaint.setAlpha((int) ((1 - lineToggleProgress) * MAX_AXIS_ALPHA));
+                    canvas.drawLine(0, yOfPrev, getWidth(), yOfPrev, mAxisPaint);
+                    canvas.drawText(Utils.coolFormat(prevYAxisStep * i), 0, yOfPrev - (float) mAxisTextSize / 2, mAxisTextPaint);
+                }
+            }
         }
 
         //Draw chart X axis
