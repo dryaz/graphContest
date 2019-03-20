@@ -5,7 +5,6 @@ import android.content.res.Resources;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.Path;
 import android.util.AttributeSet;
 import android.util.Pair;
 import android.util.TypedValue;
@@ -46,7 +45,6 @@ class ChartView extends View {
     private static final int DISTANCE_THRESHOLD = 4;
     public static final int INFO_PANEL_SHIFT = 50;
 
-//    private Path mPath = new Path();
     private float[] mPathPoints;
     private Map<String, Paint> mPaints = new HashMap<>();
 
@@ -218,16 +216,14 @@ class ChartView extends View {
             mPathPoints[0] = (firstPointToShow * mStepXForMaxScale - translation) * scale;
             mPathPoints[1] = getHeightWithoutXAxis() - yData.getValues().get(0) * yStep;
 
-//            mPath.moveTo((firstPointToShow * mStepXForMaxScale - translation) * scale,
-//                    getHeightWithoutXAxis() - yData.getValues().get(0) * yStep);
             int pointIndex = 2;
             for (int i = firstPointToShow + 1; i <= lastPointToShow; i++) {
-                mPathPoints[pointIndex] = (i * mStepXForMaxScale - translation) * scale;
-                mPathPoints[i + 1] = getHeightWithoutXAxis() - yData.getValues().get(i) * yStep;
-                mPathPoints[pointIndex + 2] = (i * mStepXForMaxScale - translation) * scale;
-                mPathPoints[i + 3] = getHeightWithoutXAxis() - yData.getValues().get(i) * yStep;
-//                mPath.lineTo((i * mStepXForMaxScale - translation) * scale,
-//                        getHeightWithoutXAxis() - yData.getValues().get(i) * yStep);
+                float x = (i * mStepXForMaxScale - translation) * scale;
+                float y = getHeightWithoutXAxis() - yData.getValues().get(i) * yStep;
+                mPathPoints[pointIndex] = x;
+                mPathPoints[pointIndex + 1] = y;
+                mPathPoints[pointIndex + 2] = x;
+                mPathPoints[pointIndex + 3] = y;
                 pointIndex += 4;
             }
 
@@ -244,7 +240,7 @@ class ChartView extends View {
                 }
             }
 
-            canvas.drawLines(mPathPoints, paint);
+            canvas.drawLines(mPathPoints, 0, pointIndex - 1, paint);
         }
 
         // Draw chart Y axis

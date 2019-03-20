@@ -39,7 +39,8 @@ class ChartControlView extends View {
     }
 
     // To avoid object creation during onDraw save path locally.
-    private Path mPath = new Path();
+    private float[] mPathPoints;
+
     // Each line has it's own paint.
     private Map<String, Paint> mPaints = new HashMap<>();
 
@@ -223,7 +224,6 @@ class ChartControlView extends View {
             float masPossibleYeverComputed =
                     mLastMaxPossibleYever + (maxPossibleYever - mLastMaxPossibleYever) * progress;
 
-            mPath.reset();
             ChartData.YData yData = mChartData.getYValues().get(k);
 
             if (!yData.getVarName().equals(mLineToToggle)) {
@@ -239,11 +239,17 @@ class ChartControlView extends View {
             }
             float yStep = (float) getHeight() / masPossibleYeverComputed;
 
-            mPath.moveTo((firstPointToShow * mStepXForMaxScale - translation) * scale,
-                    getHeight() - yData.getValues().get(0) * yStep);
+            mPathPoints[0] = (firstPointToShow * mStepXForMaxScale - translation) * scale;
+            mPathPoints[1] = getHeight() - yData.getValues().get(0) * yStep;
+            int pointIndex = 2;
             for (int i = firstPointToShow + 1; i <= lastPointToShow; i++) {
-                mPath.lineTo((i * mStepXForMaxScale - translation) * scale,
-                        getHeight() - yData.getValues().get(i) * yStep);
+                float x = (i * mStepXForMaxScale - translation) * scale;
+                float y = getHeight() - yData.getValues().get(i) * yStep;
+                mPathPoints[pointIndex] = x;
+                mPathPoints[pointIndex + 1] = y;
+                mPathPoints[pointIndex + 2] = x;
+                mPathPoints[pointIndex + 3] = y;
+                pointIndex += 4;
             }
 
             Paint paint = mPaints.get(yData.getVarName());
@@ -259,7 +265,7 @@ class ChartControlView extends View {
                 }
             }
 
-            canvas.drawPath(mPath, paint);
+            canvas.drawLines(mPathPoints, 0, pointIndex - 1, paint);
         }
 
         if (progress < 1 && (mLineToToggle != null)) {
@@ -301,6 +307,8 @@ class ChartControlView extends View {
             });
             return;
         }
+
+        mPathPoints = new float[data.getXValues().size() * 4];
 
         mChartData = data;
         mPaints.clear();
