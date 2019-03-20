@@ -260,7 +260,7 @@ class ChartView extends View {
                 y += (animDirection * (lineToggleProgress - 1) * yDistance);
             }
             canvas.drawLine(0, y, getWidth(), y, mAxisPaint);
-            canvas.drawText(String.valueOf(yAxisStep * i), 0, y - (float) mAxisTextSize / 2, mAxisTextPaint);
+            canvas.drawText(Utils.coolFormat(yAxisStep * i), 0, y - (float) mAxisTextSize / 2, mAxisTextPaint);
         }
 
         //Draw chart X axis
@@ -363,7 +363,7 @@ class ChartView extends View {
                 } else {
                     tvPair.first.setVisibility(VISIBLE);
                     tvPair.second.setVisibility(VISIBLE);
-                    tvPair.second.setText(String.valueOf(yValue));
+                    tvPair.second.setText(Utils.prettyFormat(yValue));
                 }
                 Paint paint = mPaints.get(yData.getVarName());
                 if (paint == null) {
