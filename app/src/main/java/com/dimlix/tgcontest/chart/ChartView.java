@@ -46,7 +46,8 @@ class ChartView extends View {
     private static final int DISTANCE_THRESHOLD = 4;
     public static final int INFO_PANEL_SHIFT = 50;
 
-    private Path mPath = new Path();
+//    private Path mPath = new Path();
+    private float[] mPathPoints;
     private Map<String, Paint> mPaints = new HashMap<>();
 
     private float mLeftCurrentXBoarderValue = 0;
@@ -205,7 +206,6 @@ class ChartView extends View {
         float yStep = (float) getHeightWithoutXAxis() / masPossibleYeverComputed;
 
         for (int k = 0; k < mChartData.getYValues().size(); k++) {
-            mPath.reset();
             ChartData.YData yData = mChartData.getYValues().get(k);
 
 
@@ -215,11 +215,20 @@ class ChartView extends View {
                 }
             }
 
-            mPath.moveTo((firstPointToShow * mStepXForMaxScale - translation) * scale,
-                    getHeightWithoutXAxis() - yData.getValues().get(0) * yStep);
+            mPathPoints[0] = (firstPointToShow * mStepXForMaxScale - translation) * scale;
+            mPathPoints[1] = getHeightWithoutXAxis() - yData.getValues().get(0) * yStep;
+
+//            mPath.moveTo((firstPointToShow * mStepXForMaxScale - translation) * scale,
+//                    getHeightWithoutXAxis() - yData.getValues().get(0) * yStep);
+            int pointIndex = 2;
             for (int i = firstPointToShow + 1; i <= lastPointToShow; i++) {
-                mPath.lineTo((i * mStepXForMaxScale - translation) * scale,
-                        getHeightWithoutXAxis() - yData.getValues().get(i) * yStep);
+                mPathPoints[pointIndex] = (i * mStepXForMaxScale - translation) * scale;
+                mPathPoints[i + 1] = getHeightWithoutXAxis() - yData.getValues().get(i) * yStep;
+                mPathPoints[pointIndex + 2] = (i * mStepXForMaxScale - translation) * scale;
+                mPathPoints[i + 3] = getHeightWithoutXAxis() - yData.getValues().get(i) * yStep;
+//                mPath.lineTo((i * mStepXForMaxScale - translation) * scale,
+//                        getHeightWithoutXAxis() - yData.getValues().get(i) * yStep);
+                pointIndex += 4;
             }
 
             Paint paint = mPaints.get(yData.getVarName());
@@ -235,7 +244,7 @@ class ChartView extends View {
                 }
             }
 
-            canvas.drawPath(mPath, paint);
+            canvas.drawLines(mPathPoints, paint);
         }
 
         // Draw chart Y axis
@@ -453,6 +462,8 @@ class ChartView extends View {
         LayoutInflater inflater = LayoutInflater.from(getContext());
         ViewGroup infoView = (ViewGroup) inflater.inflate(R.layout.float_info_panel, null);
         TextView infoViewTitle = infoView.findViewById(R.id.tvTitle);
+
+        mPathPoints = new float[data.getXValues().size() * 4];
 
         mChartData = data;
         mPaints.clear();
