@@ -7,4 +7,6 @@
     <attr name="infoDateTextColor" format="reference|color" />
     <attr name="infoBgColor" format="reference|color" />
     <attr name="chartDelimeter" format="reference|color" />
+    <attr name="maskColor" format="reference|color" />
+    <attr name="maskDragColor" format="reference|color" />
 </resources>

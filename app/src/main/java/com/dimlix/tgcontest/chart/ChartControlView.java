@@ -1,11 +1,13 @@
 package com.dimlix.tgcontest.chart;
 
 import android.content.Context;
+import android.content.res.Resources;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.util.AttributeSet;
+import android.util.TypedValue;
 import android.view.MotionEvent;
 import android.view.View;
 
@@ -88,14 +90,17 @@ public class ChartControlView extends View {
         mDragZoneTouchWidth = getContext().getResources().getDimensionPixelSize(R.dimen.drag_zone_touch_width);
         mDragBoarderHeight = getContext().getResources().getDimensionPixelSize(R.dimen.drag_border_height);
 
+        TypedValue typedValue = new TypedValue();
+        Resources.Theme theme = getContext().getTheme();
+        theme.resolveAttribute(R.attr.maskColor, typedValue, true);
+
         mMaskPaint = new Paint();
-        mMaskPaint.setColor(Color.GRAY);
-        mMaskPaint.setAlpha(30);
+        mMaskPaint.setColor(typedValue.data);
         mMaskPaint.setStyle(Paint.Style.FILL);
 
+        theme.resolveAttribute(R.attr.maskDragColor, typedValue, true);
         mDragPaint = new Paint();
-        mDragPaint.setColor(Color.GRAY);
-        mDragPaint.setAlpha(90);
+        mDragPaint.setColor(typedValue.data);
         mDragPaint.setStyle(Paint.Style.FILL);
 
         setOnTouchListener(new OnTouchListener() {
