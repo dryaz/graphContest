@@ -75,6 +75,9 @@ class ChartControlView extends View {
 
     @TouchMode
     private int mCurrentMode = TouchMode.NONE;
+    // Support second gesture to drag from both sides at the time
+    @TouchMode
+    private int mMultitouchMode = TouchMode.NONE;
     private float mLastXPost = -1;
 
     public ChartControlView(Context context) {
@@ -108,34 +111,59 @@ class ChartControlView extends View {
         setOnTouchListener(new OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent event) {
-
+                // Don't handle 3+ touches
+                if (event.getActionIndex() > 1) return true;
                 if (mListener != null) {
                     mListener.onViewTouched();
                 }
 
-                if (event.getAction() == MotionEvent.ACTION_UP) {
+                if (event.getActionMasked() == MotionEvent.ACTION_UP) {
                     mCurrentMode = TouchMode.NONE;
                 }
 
-                if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                    float left = (float) mMinPos / ChartLayout.MAX_DISCRETE_PROGRESS * getWidth();
+                if (event.getActionMasked() == MotionEvent.ACTION_POINTER_UP) {
+                    if (event.getActionIndex() == 0) {
+                        mCurrentMode = mMultitouchMode;
+                    }
+                    mMultitouchMode = TouchMode.NONE;
+                }
+
+                int maxTouchIndex = event.getPointerCount() - 1;
+
+                if (event.getActionMasked() == MotionEvent.ACTION_DOWN
+                        || event.getActionMasked() == MotionEvent.ACTION_POINTER_DOWN) {
+                    float left = mMinPos / ChartLayout.MAX_DISCRETE_PROGRESS * getWidth();
                     float leftLeft = left - (float) mDragZoneTouchWidth / 2;
                     float leftRight = left + (float) mDragZoneTouchWidth / 2;
 
-                    float right = (float) mMaxPos / ChartLayout.MAX_DISCRETE_PROGRESS * getWidth();
+                    float right = mMaxPos / ChartLayout.MAX_DISCRETE_PROGRESS * getWidth();
                     float rightLeft = right - (float) mDragZoneTouchWidth / 2;
                     float rightRight = right + (float) mDragZoneTouchWidth / 2;
-                    if (event.getX() >= leftLeft && event.getX() <= leftRight) {
-                        mCurrentMode = TouchMode.LEFT_BOARDER;
-                    } else if (event.getX() >= rightLeft && event.getX() <= rightRight) {
-                        mCurrentMode = TouchMode.RIGHT_BOARDER;
-                    } else if (event.getX() >= leftLeft && event.getX() <= rightRight) {
-                        mCurrentMode = TouchMode.DRAG_REGION;
-                        mLastXPost = event.getX();
+
+                    if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                        if (event.getX() >= leftLeft && event.getX() <= leftRight) {
+                            mCurrentMode = TouchMode.LEFT_BOARDER;
+                        } else if (event.getX() >= rightLeft && event.getX() <= rightRight) {
+                            mCurrentMode = TouchMode.RIGHT_BOARDER;
+                        } else if (event.getX() >= leftLeft && event.getX() <= rightRight) {
+                            mCurrentMode = TouchMode.DRAG_REGION;
+                            mLastXPost = event.getX();
+                        }
+                    } else if (mCurrentMode != TouchMode.DRAG_REGION) {
+                        if (event.getX(maxTouchIndex) >= leftLeft && event.getX(maxTouchIndex) <= leftRight) {
+                            mMultitouchMode = TouchMode.LEFT_BOARDER;
+                        } else if (event.getX(maxTouchIndex) >= rightLeft && event.getX(maxTouchIndex) <= rightRight) {
+                            mMultitouchMode = TouchMode.RIGHT_BOARDER;
+                        } else if (event.getX(maxTouchIndex) >= leftLeft && event.getX(maxTouchIndex) <= rightRight
+                                && mCurrentMode != TouchMode.LEFT_BOARDER
+                                && mCurrentMode != TouchMode.RIGHT_BOARDER) {
+                            mMultitouchMode = TouchMode.DRAG_REGION;
+                            mLastXPost = event.getX(maxTouchIndex);
+                        }
                     }
                 }
 
-                if (event.getAction() == MotionEvent.ACTION_MOVE) {
+                if (event.getActionMasked() == MotionEvent.ACTION_MOVE) {
                     float min = mMinPos;
                     float max = mMaxPos;
                     switch (mCurrentMode) {
@@ -155,6 +183,25 @@ class ChartControlView extends View {
                             max += diff;
                             break;
                     }
+
+                    switch (mMultitouchMode) {
+                        case TouchMode.LEFT_BOARDER:
+                            min = (int) ((event.getX(maxTouchIndex) / v.getWidth()) * ChartLayout.MAX_DISCRETE_PROGRESS);
+                            break;
+                        case TouchMode.RIGHT_BOARDER:
+                            max = (int) ((event.getX(maxTouchIndex) / v.getWidth()) * ChartLayout.MAX_DISCRETE_PROGRESS);
+                            break;
+                        case TouchMode.DRAG_REGION:
+                            float diff = ((event.getX(maxTouchIndex) - mLastXPost) / v.getWidth()) * ChartLayout.MAX_DISCRETE_PROGRESS;
+                            mLastXPost = event.getX(maxTouchIndex);
+                            if (min + diff < 0 || max + diff > ChartLayout.MAX_DISCRETE_PROGRESS) {
+                                return true;
+                            }
+                            min += diff;
+                            max += diff;
+                            break;
+                    }
+
                     setMinMax(min, max);
                 }
                 return true;
