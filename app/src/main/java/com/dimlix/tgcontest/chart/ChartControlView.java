@@ -278,12 +278,12 @@ class ChartControlView extends View {
         }
 
         // Draw left portion of mask
-        float leftRight = (float) mMinPos / ChartLayout.MAX_DISCRETE_PROGRESS * getWidth();
+        float leftRight = mMinPos / ChartLayout.MAX_DISCRETE_PROGRESS * getWidth();
         canvas.drawRect(0, 0, leftRight, getHeight(), mMaskPaint);
         // Draw left draggable field
         canvas.drawRect(leftRight, 0, leftRight + mDragZoneWidth, getHeight(), mDragPaint);
         // Draw top border
-        float rightLeft = (float) mMaxPos / ChartLayout.MAX_DISCRETE_PROGRESS * getWidth();
+        float rightLeft = mMaxPos / ChartLayout.MAX_DISCRETE_PROGRESS * getWidth();
         canvas.drawRect(leftRight + mDragZoneWidth, 0, rightLeft - mDragZoneWidth,
                 mDragBoarderHeight, mDragPaint);
         // Draw bottom border
