@@ -71,6 +71,13 @@ public class ChartLayout extends LinearLayout implements CompoundButton.OnChecke
                     mListener.onInnerViewTouched();
                 }
             }
+
+            @Override
+            public void onViewReleased() {
+                if (mListener != null) {
+                    mListener.onInnerViewReleased();
+                }
+            }
         });
 
         mChartView.setListener(new ChartView.Listener() {
@@ -78,6 +85,13 @@ public class ChartLayout extends LinearLayout implements CompoundButton.OnChecke
             public void onViewTouched() {
                 if (mListener != null) {
                     mListener.onInnerViewTouched();
+                }
+            }
+
+            @Override
+            public void onViewReleased() {
+                if (mListener != null) {
+                    mListener.onInnerViewReleased();
                 }
             }
         });
@@ -153,6 +167,7 @@ public class ChartLayout extends LinearLayout implements CompoundButton.OnChecke
 
     public interface Listener {
         void onInnerViewTouched();
+        void onInnerViewReleased();
     }
 
     @Override

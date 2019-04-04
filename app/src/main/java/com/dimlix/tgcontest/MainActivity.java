@@ -50,6 +50,11 @@ public class MainActivity extends Activity {
                 public void onInnerViewTouched() {
                     mScrollView.requestDisallowInterceptTouchEvent(true);
                 }
+
+                @Override
+                public void onInnerViewReleased() {
+                    mScrollView.requestDisallowInterceptTouchEvent(false);
+                }
             });
             chartView.setData(graphData.getChartData().get(i));
             container.addView(chartView);

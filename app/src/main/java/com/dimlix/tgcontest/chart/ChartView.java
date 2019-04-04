@@ -86,6 +86,11 @@ class ChartView extends View {
 
     private boolean mIsAnimationsEnabled = true;
 
+    private int mDragThreshold;
+    private float mXDesisionPos = -1;
+    private float mYDesisionPos = -1;
+    private boolean mDecisionMade = false;
+
     public ChartView(Context context) {
         super(context);
         init();
@@ -101,6 +106,7 @@ class ChartView extends View {
     }
 
     private void init() {
+        mDragThreshold = getContext().getResources().getDimensionPixelSize(R.dimen.drag_threshold);
         mAxisWidth = getContext().getResources().getDimensionPixelSize(R.dimen.axis_width);
         mAxisXHeight = getContext().getResources().getDimensionPixelSize(R.dimen.axis_x_height);
         mAxisTextSize = getContext().getResources().getDimensionPixelSize(R.dimen.axis_text_size);
@@ -135,6 +141,20 @@ class ChartView extends View {
                 if (event.getAction() == MotionEvent.ACTION_DOWN
                         || event.getAction() == MotionEvent.ACTION_MOVE) {
                     mTouchXValue = event.getX();
+                    if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                        mDecisionMade = false;
+                        mYDesisionPos = event.getY();
+                        mXDesisionPos = event.getX();
+                    } else {
+                        if (Math.abs(mYDesisionPos - event.getY()) > mDragThreshold && !mDecisionMade) {
+                            mListener.onViewReleased();
+                            mTouchXValue = -1;
+                            mDecisionMade = true;
+                        }
+                        if (Math.abs(mXDesisionPos - event.getX()) > mDragThreshold && !mDecisionMade) {
+                            mDecisionMade = true;
+                        }
+                    }
                 }
                 if (event.getAction() == MotionEvent.ACTION_UP) {
                     mTouchXValue = -1;
@@ -540,6 +560,7 @@ class ChartView extends View {
 
     public interface Listener {
         void onViewTouched();
+        void onViewReleased();
     }
 
     private class InfoPanelViewHolder {

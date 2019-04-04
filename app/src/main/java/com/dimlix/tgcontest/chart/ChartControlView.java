@@ -6,6 +6,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.MotionEvent;
 import android.view.View;
@@ -80,6 +81,11 @@ class ChartControlView extends View {
     private int mMultitouchMode = TouchMode.NONE;
     private float mLastXPost = -1;
 
+    private int mDragThreshold;
+    private float mXDesisionPos = -1;
+    private float mYDesisionPos = -1;
+    private boolean mDecisionMade = false;
+
     public ChartControlView(Context context) {
         super(context);
         init();
@@ -91,6 +97,7 @@ class ChartControlView extends View {
     }
 
     private void init() {
+        mDragThreshold = getContext().getResources().getDimensionPixelSize(R.dimen.drag_threshold);
         mDragZoneWidth = getContext().getResources().getDimensionPixelSize(R.dimen.drag_zone_width);
         mDragZoneTouchWidth = getContext().getResources().getDimensionPixelSize(R.dimen.drag_zone_touch_width);
         mDragBoarderHeight = getContext().getResources().getDimensionPixelSize(R.dimen.drag_border_height);
@@ -132,6 +139,7 @@ class ChartControlView extends View {
 
                 if (event.getActionMasked() == MotionEvent.ACTION_DOWN
                         || event.getActionMasked() == MotionEvent.ACTION_POINTER_DOWN) {
+                    mDecisionMade = true;
                     float left = mMinPos / ChartLayout.MAX_DISCRETE_PROGRESS * getWidth();
                     float leftLeft = left - (float) mDragZoneTouchWidth / 2;
                     float leftRight = left + (float) mDragZoneTouchWidth / 2;
@@ -141,6 +149,9 @@ class ChartControlView extends View {
                     float rightRight = right + (float) mDragZoneTouchWidth / 2;
 
                     if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                        mDecisionMade = false;
+                        mYDesisionPos = event.getY();
+                        mXDesisionPos = event.getX();
                         if (event.getX() >= leftLeft && event.getX() <= leftRight) {
                             mCurrentMode = TouchMode.LEFT_BOARDER;
                         } else if (event.getX() >= rightLeft && event.getX() <= rightRight) {
@@ -166,6 +177,13 @@ class ChartControlView extends View {
                 if (event.getActionMasked() == MotionEvent.ACTION_MOVE) {
                     float min = mMinPos;
                     float max = mMaxPos;
+                    if (Math.abs(mYDesisionPos - event.getY()) > mDragThreshold && !mDecisionMade) {
+                        mListener.onViewReleased();
+                        mDecisionMade = true;
+                    }
+                    if (Math.abs(mXDesisionPos - event.getX()) > mDragThreshold && !mDecisionMade) {
+                        mDecisionMade = true;
+                    }
                     switch (mCurrentMode) {
                         case TouchMode.LEFT_BOARDER:
                             min = (int) ((event.getX() / v.getWidth()) * ChartLayout.MAX_DISCRETE_PROGRESS);
@@ -395,5 +413,7 @@ class ChartControlView extends View {
         void onBoarderChange(int left, int right);
 
         void onViewTouched();
+
+        void onViewReleased();
     }
 }
