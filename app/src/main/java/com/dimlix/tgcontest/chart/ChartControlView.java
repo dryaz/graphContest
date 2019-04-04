@@ -96,6 +96,11 @@ class ChartControlView extends View {
         init();
     }
 
+    public void reInit() {
+        init();
+        invalidate();
+    }
+
     private void init() {
         mDragThreshold = getContext().getResources().getDimensionPixelSize(R.dimen.drag_threshold);
         mDragZoneWidth = getContext().getResources().getDimensionPixelSize(R.dimen.drag_zone_width);

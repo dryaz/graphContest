@@ -15,6 +15,7 @@
         <item name="chartDelimeter">#f1f1f2</item>
         <item name="maskColor">#caf0f0f0</item>
         <item name="maskDragColor">#34517da2</item>
+        <item name="checkboxColor">#000</item>
     </style>
 
     <style name="AppThemeDark" parent="android:Theme.Material">
@@ -32,6 +33,8 @@
         <item name="chartDelimeter">#131c26</item>
         <item name="maskColor">#ca151e27</item>
         <item name="maskDragColor">#54517da2</item>
+        <item name="checkboxColor">#fff</item>
+
     </style>
 
 </resources>

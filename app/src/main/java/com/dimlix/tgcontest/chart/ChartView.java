@@ -1,6 +1,7 @@
 package com.dimlix.tgcontest.chart;
 
 import android.content.Context;
+import android.content.res.ColorStateList;
 import android.content.res.Resources;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -174,6 +175,17 @@ class ChartView extends View {
                 return true;
             }
         });
+    }
+
+    void reInit() {
+        init();
+        TypedValue typedValue = new TypedValue();
+        Resources.Theme theme = getContext().getTheme();
+        theme.resolveAttribute(R.attr.infoBgColor, typedValue, true);
+        mInfoPanelViewHolder.mInfoView.setBackgroundTintList(ColorStateList.valueOf(typedValue.data));
+        theme.resolveAttribute(R.attr.infoDateTextColor, typedValue, true);
+        mInfoPanelViewHolder.mInfoViewTitle.setTextColor(typedValue.data);
+        invalidate();
     }
 
     @Override

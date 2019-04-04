@@ -1,12 +1,20 @@
 package com.dimlix.tgcontest;
 
 import android.app.Activity;
+import android.content.res.Resources;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
+import android.util.Log;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.View;
 import android.view.ViewGroup;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.ScrollView;
 
 import com.dimlix.tgcontest.chart.ChartLayout;
@@ -21,6 +29,7 @@ public class MainActivity extends Activity {
     private boolean mIsLightTheme = true;
 
     private ScrollView mScrollView;
+    private ViewGroup mContainer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,9 +49,9 @@ public class MainActivity extends Activity {
         // TODO persist data across activity recreations, make graphData parcable
         GraphData graphData = new JsonGraphReader().getGraphDataFromJson(loadGraphJSONFromAsset());
         LayoutInflater inflater = LayoutInflater.from(this);
-        ViewGroup container = findViewById(R.id.container);
+        mContainer = findViewById(R.id.container);
         for (int i = 0; i < graphData.getChartData().size(); i++) {
-            ChartLayout chartView = (ChartLayout) inflater.inflate(R.layout.item_chart, container, false);
+            ChartLayout chartView = (ChartLayout) inflater.inflate(R.layout.item_chart, mContainer, false);
             // Need to set ID to restore state (without ID will be the same state for all views)
             chartView.setId(i);
             chartView.setListener(new ChartLayout.Listener() {
@@ -57,7 +66,7 @@ public class MainActivity extends Activity {
                 }
             });
             chartView.setData(graphData.getChartData().get(i));
-            container.addView(chartView);
+            mContainer.addView(chartView);
         }
     }
 
@@ -75,13 +84,29 @@ public class MainActivity extends Activity {
             case R.id.action_toggle:
                 if (mIsLightTheme) {
                     mIsLightTheme = false;
-                    recreate();
+                    setTheme(R.style.AppThemeDark);
                 } else {
                     mIsLightTheme = true;
-                    recreate();
+                    setTheme(R.style.AppThemeLight);
                 }
                 break;
         }
+        for (int i = 0; i < mContainer.getChildCount(); i++ ) {
+            View child = mContainer.getChildAt(i);
+            if (child instanceof ChartLayout) {
+                ((ChartLayout) child).reInit();
+            }
+        }
+        TypedValue typedValue = new TypedValue();
+        Resources.Theme theme = getTheme();
+        theme.resolveAttribute(android.R.attr.windowBackground, typedValue, true);
+        getWindow().getDecorView().setBackgroundColor(typedValue.data);
+        theme.resolveAttribute(android.R.attr.colorPrimary, typedValue, true);
+        getActionBar().setBackgroundDrawable(new ColorDrawable(typedValue.data));
+        theme.resolveAttribute(android.R.attr.colorPrimaryDark, typedValue, true);
+        Window window = getWindow();
+        window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+        window.setStatusBarColor(typedValue.data);
         return super.onOptionsItemSelected(item);
     }
 

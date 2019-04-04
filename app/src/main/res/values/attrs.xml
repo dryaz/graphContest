@@ -9,4 +9,5 @@
     <attr name="chartDelimeter" format="reference|color" />
     <attr name="maskColor" format="reference|color" />
     <attr name="maskDragColor" format="reference|color" />
+    <attr name="checkboxColor" format="reference|color" />
 </resources>

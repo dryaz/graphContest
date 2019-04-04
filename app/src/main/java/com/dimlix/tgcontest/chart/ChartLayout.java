@@ -2,10 +2,12 @@ package com.dimlix.tgcontest.chart;
 
 import android.content.Context;
 import android.content.res.ColorStateList;
+import android.content.res.Resources;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.util.AttributeSet;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.CheckBox;
@@ -33,7 +35,6 @@ public class ChartLayout extends LinearLayout implements CompoundButton.OnChecke
     private ChartView mChartView;
     private ChartControlView mChartControlView;
 
-    private List<CheckBox> mCheckBoxes = new ArrayList<>();
     private ChartData mData;
 
     private Listener mListener;
@@ -42,6 +43,8 @@ public class ChartLayout extends LinearLayout implements CompoundButton.OnChecke
     private int mRightBoarder = MAX_DISCRETE_PROGRESS;
     private Map<String, CompoundButton> mChartCheckboxes;
     private Set<String> mDisbledCharts;
+
+    private List<View> mDelimeters = new ArrayList();
 
     public ChartLayout(Context context) {
         super(context);
@@ -117,11 +120,6 @@ public class ChartLayout extends LinearLayout implements CompoundButton.OnChecke
         mChartCheckboxes = new HashMap<>(data.getYValues().size());
         mDisbledCharts = new HashSet<>(data.getYValues().size());
 
-        for (CheckBox checkBox : mCheckBoxes) {
-            checkBox.setOnCheckedChangeListener(null);
-            removeView(checkBox);
-        }
-
         int states[][] = {{android.R.attr.state_checked}, {}};
 
         LayoutInflater inflater = LayoutInflater.from(getContext());
@@ -139,6 +137,7 @@ public class ChartLayout extends LinearLayout implements CompoundButton.OnChecke
             addView(checkbox);
             if (count++ < data.getYValues().size() - 1) {
                 View deli = inflater.inflate(R.layout.chart_checkbox_delimeter, this, false);
+                mDelimeters.add(deli);
                 addView(deli);
             }
         }
@@ -167,6 +166,7 @@ public class ChartLayout extends LinearLayout implements CompoundButton.OnChecke
 
     public interface Listener {
         void onInnerViewTouched();
+
         void onInnerViewReleased();
     }
 
@@ -206,5 +206,22 @@ public class ChartLayout extends LinearLayout implements CompoundButton.OnChecke
     private void setAnimationEnabled(boolean isEnabled) {
         mChartControlView.setAnimationsEnabled(isEnabled);
         mChartView.setAnimationsEnabled(isEnabled);
+    }
+
+    public void reInit() {
+        mChartView.reInit();
+        mChartControlView.reInit();
+        TypedValue typedValue = new TypedValue();
+        Resources.Theme theme = getContext().getTheme();
+        theme.resolveAttribute(R.attr.bgChartColor, typedValue, true);
+        setBackgroundColor(typedValue.data);
+        theme.resolveAttribute(R.attr.checkboxColor, typedValue, true);
+        for (CompoundButton button : mChartCheckboxes.values()) {
+            button.setTextColor(typedValue.data);
+        }
+        theme.resolveAttribute(R.attr.chartDelimeter, typedValue, true);
+        for (View deli: mDelimeters) {
+            deli.setBackgroundColor(typedValue.data);
+        }
     }
 }
