@@ -45,6 +45,7 @@ class ChartView extends View {
     private static final int DISTANCE_THRESHOLD = 4;
     public static final int INFO_PANEL_SHIFT = 50;
     public static final int MAX_AXIS_ALPHA = 100;
+    private static final long TOUCH_THRESHOLD = 500;
 
     private float[] mPathPoints;
     private Map<String, Paint> mPaints = new HashMap<>();
@@ -87,6 +88,7 @@ class ChartView extends View {
     private boolean mIsAnimationsEnabled = true;
 
     private int mDragThreshold;
+    private long mFirstIteractionTime = -1;
     private float mXDesisionPos = -1;
     private float mYDesisionPos = -1;
     private boolean mDecisionMade = false;
@@ -140,7 +142,11 @@ class ChartView extends View {
                 }
                 if (event.getAction() == MotionEvent.ACTION_DOWN
                         || event.getAction() == MotionEvent.ACTION_MOVE) {
-                    mTouchXValue = event.getX();
+                    if (mFirstIteractionTime < 0) {
+                        mFirstIteractionTime = System.currentTimeMillis();
+                    } else if (System.currentTimeMillis() - mFirstIteractionTime > TOUCH_THRESHOLD) {
+                        mDecisionMade = true;
+                    }
                     if (event.getAction() == MotionEvent.ACTION_DOWN) {
                         mDecisionMade = false;
                         mYDesisionPos = event.getY();
@@ -148,16 +154,21 @@ class ChartView extends View {
                     } else {
                         if (Math.abs(mYDesisionPos - event.getY()) > mDragThreshold && !mDecisionMade) {
                             mListener.onViewReleased();
+                            mFirstIteractionTime = -1;
                             mTouchXValue = -1;
-                            mDecisionMade = true;
+                            mDecisionMade = false;
                         }
                         if (Math.abs(mXDesisionPos - event.getX()) > mDragThreshold && !mDecisionMade) {
                             mDecisionMade = true;
+                        }
+                        if (mDecisionMade) {
+                            mTouchXValue = event.getX();
                         }
                     }
                 }
                 if (event.getAction() == MotionEvent.ACTION_UP) {
                     mTouchXValue = -1;
+                    mFirstIteractionTime = -1;
                 }
                 invalidate();
                 return true;
