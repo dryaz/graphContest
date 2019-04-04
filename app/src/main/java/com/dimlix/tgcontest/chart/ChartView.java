@@ -20,8 +20,10 @@ import com.dimlix.tgcontest.model.ChartData;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Class to display chart data.
@@ -56,7 +58,8 @@ class ChartView extends View {
 
     private float mStepXForMaxScale;
 
-    private String mLineToToggle = null;
+//    private String mLineToToggle = null;
+    private Set<String> mLinesToToggle = new HashSet<>();
 
     private ChartData mChartData = null;
 
@@ -229,12 +232,12 @@ class ChartView extends View {
 
         float lineToggleProgress = 1;
         if (mIsAnimationsEnabled
-                && (mLineToToggle != null || maxPossibleYever != mLastMaxPossibleYever)) {
+                && (!mLinesToToggle.isEmpty() || maxPossibleYever != mLastMaxPossibleYever)) {
             if (mStartToggleTime == -1) {
                 mStartToggleTime = System.currentTimeMillis();
             }
             long elapsed = System.currentTimeMillis() - mStartToggleTime;
-            if (mLineToToggle != null) {
+            if (!mLinesToToggle.isEmpty()) {
                 lineToggleProgress = Math.min((float) elapsed / TOGGLE_ANIM_DURATION, 1);
             } else {
                 lineToggleProgress = Math.min((float) elapsed / SHIFT_ANIM_DURATION, 1);
@@ -351,9 +354,9 @@ class ChartView extends View {
             if (lineToggleProgress >= 1) {
                 mStartToggleTime = -1;
             }
-            if (mLineToToggle != null || mLastMaxPossibleYever != maxPossibleYever) {
+            if (!mLinesToToggle.isEmpty() || mLastMaxPossibleYever != maxPossibleYever) {
                 mLastMaxPossibleYever = maxPossibleYever;
-                mLineToToggle = null;
+                mLinesToToggle.clear();
                 invalidate();
             }
         }
@@ -458,7 +461,7 @@ class ChartView extends View {
             ChartData.YData yData = mChartData.getYValues().get(k);
 
 
-            if (!yData.getVarName().equals(mLineToToggle)) {
+            if (!mLinesToToggle.contains(yData.getVarName())) {
                 if (!yData.isShown()) {
                     continue;
                 }
@@ -483,7 +486,7 @@ class ChartView extends View {
                 throw new RuntimeException("There is no color info for " + yData.getVarName());
             }
 
-            if (yData.getVarName().equals(mLineToToggle)) {
+            if (mLinesToToggle.contains(yData.getVarName())) {
                 if (yData.isShown()) {
                     paint.setAlpha(Math.min(((int) (255 * lineToggleProgress)), 255));
                 } else {
@@ -576,8 +579,10 @@ class ChartView extends View {
      * @param yVarName name of affected line
      */
     void onYChartToggled(String yVarName) {
-        mStartToggleTime = System.currentTimeMillis();
-        mLineToToggle = yVarName;
+        if (mStartToggleTime == -1) {
+            mStartToggleTime = System.currentTimeMillis();
+        }
+        mLinesToToggle.add(yVarName);
         invalidate();
     }
 
