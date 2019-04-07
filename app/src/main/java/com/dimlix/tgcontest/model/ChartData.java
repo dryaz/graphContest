@@ -15,6 +15,15 @@ public class ChartData {
     private static final SimpleDateFormat SHORT_DATE_FORMAT = new SimpleDateFormat("MMM dd", Locale.US);
     private static final SimpleDateFormat LONG_DATE_FORMAT = new SimpleDateFormat("EEE, MMM dd", Locale.US);
 
+    private String mType;
+
+    public String getType() {
+        return mType;
+    }
+
+    public void setType(String type) {
+        mType = type;
+    }
 
     public void addYValues(YData data) {
         mYValues.add(data);

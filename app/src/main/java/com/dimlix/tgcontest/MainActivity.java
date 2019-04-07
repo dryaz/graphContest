@@ -5,7 +5,6 @@ import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
-import android.util.Log;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -23,13 +22,19 @@ import com.dimlix.tgcontest.model.GraphData;
 import java.io.IOException;
 import java.io.InputStream;
 
-public class MainActivity extends Activity {
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
+import androidx.core.content.ContextCompat;
+
+public class MainActivity extends AppCompatActivity {
 
     public static final String THEME = "THEME";
     private boolean mIsLightTheme = true;
 
     private ScrollView mScrollView;
     private ViewGroup mContainer;
+    private Toolbar mToolbar;
+    private MenuItem mToggleMenu;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,6 +50,9 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
 
         mScrollView = findViewById(R.id.scroll);
+
+        mToolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(mToolbar);
 
         // TODO persist data across activity recreations, make graphData parcable
         GraphData graphData = new JsonGraphReader().getGraphDataFromJson(loadGraphJSONFromAsset());
@@ -68,12 +76,34 @@ public class MainActivity extends Activity {
             chartView.setData(graphData.getChartData().get(i));
             mContainer.addView(chartView);
         }
+
+        setSystemBarTheme(false);
+    }
+
+    public final void setSystemBarTheme(final boolean pIsDark) {
+        // Fetch the current flags.
+        final int lFlags = getWindow().getDecorView().getSystemUiVisibility();
+        // Update the SystemUiVisibility dependening on whether we want a Light or Dark theme.
+        getWindow().getDecorView().setSystemUiVisibility(pIsDark ? (lFlags & ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR) : (lFlags | View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR));
+        if (pIsDark) {
+            mToolbar.setTitleTextColor(Color.WHITE);
+        } else {
+            mToolbar.setTitleTextColor(Color.BLACK);
+        }
+        if (mToggleMenu != null) {
+            if (pIsDark) {
+                mToggleMenu.setIcon(R.drawable.ic_moon_white);
+            } else {
+                mToggleMenu.setIcon(R.drawable.ic_moon_gray);
+            }
+        }
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.menu_theme_toggle, menu);
+        mToggleMenu = menu.findItem(R.id.action_toggle);
         // return true so that the menu pop up is opened
         return true;
     }
@@ -85,13 +115,15 @@ public class MainActivity extends Activity {
                 if (mIsLightTheme) {
                     mIsLightTheme = false;
                     setTheme(R.style.AppThemeDark);
+                    setSystemBarTheme(true);
                 } else {
                     mIsLightTheme = true;
                     setTheme(R.style.AppThemeLight);
+                    setSystemBarTheme(false);
                 }
                 break;
         }
-        for (int i = 0; i < mContainer.getChildCount(); i++ ) {
+        for (int i = 0; i < mContainer.getChildCount(); i++) {
             View child = mContainer.getChildAt(i);
             if (child instanceof ChartLayout) {
                 ((ChartLayout) child).reInit();
@@ -102,7 +134,7 @@ public class MainActivity extends Activity {
         theme.resolveAttribute(android.R.attr.windowBackground, typedValue, true);
         getWindow().getDecorView().setBackgroundColor(typedValue.data);
         theme.resolveAttribute(android.R.attr.colorPrimary, typedValue, true);
-        getActionBar().setBackgroundDrawable(new ColorDrawable(typedValue.data));
+        getSupportActionBar().setBackgroundDrawable(new ColorDrawable(typedValue.data));
         theme.resolveAttribute(android.R.attr.colorPrimaryDark, typedValue, true);
         Window window = getWindow();
         window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);

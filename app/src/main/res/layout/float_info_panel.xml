@@ -8,7 +8,7 @@
     android:backgroundTint="?infoBgColor"
     android:backgroundTintMode="multiply"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:padding="@dimen/side_margin">
 
     <TextView
         android:id="@+id/tvTitle"

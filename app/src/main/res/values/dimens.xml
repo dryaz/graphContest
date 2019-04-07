@@ -8,4 +8,8 @@
     <dimen name="axis_selected_circle">6dp</dimen>
     <dimen name="axis_x_height">30dp</dimen>
     <dimen name="drag_threshold">10dp</dimen>
+
+    <dimen name="chip_height">48dp</dimen>
+
+    <dimen name="side_margin">16dp</dimen>
 </resources>

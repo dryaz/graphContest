@@ -4,23 +4,25 @@ import android.content.Context;
 import android.content.res.ColorStateList;
 import android.content.res.Resources;
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.util.AttributeSet;
 import android.util.TypedValue;
-import android.view.LayoutInflater;
 import android.view.View;
-import android.widget.CheckBox;
+import android.view.ViewGroup;
 import android.widget.CompoundButton;
 import android.widget.LinearLayout;
 
 import com.dimlix.tgcontest.R;
 import com.dimlix.tgcontest.model.ChartData;
+import com.google.android.material.chip.Chip;
+import com.google.android.material.chip.ChipGroup;
+import com.google.android.material.shape.CornerFamily;
+import com.google.android.material.shape.ShapeAppearanceModel;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -28,7 +30,7 @@ import java.util.Set;
  * Basic layout that contains {@link ChartView} that displays chart
  * and {@link ChartControlView} that control behaviour.
  */
-public class ChartLayout extends LinearLayout implements CompoundButton.OnCheckedChangeListener {
+public class ChartLayout extends LinearLayout implements CompoundButton.OnCheckedChangeListener, View.OnLongClickListener {
 
     public static int MAX_DISCRETE_PROGRESS = 10000;
 
@@ -41,10 +43,12 @@ public class ChartLayout extends LinearLayout implements CompoundButton.OnChecke
 
     private int mLeftBoarder = 0;
     private int mRightBoarder = MAX_DISCRETE_PROGRESS;
-    private Map<String, CompoundButton> mChartCheckboxes;
+    private Map<String, Chip> mChartCheckboxes;
     private Set<String> mDisbledCharts;
 
-    private List<View> mDelimeters = new ArrayList();
+    private ViewGroup mChipGroup;
+
+    private int mChipHeight;
 
     public ChartLayout(Context context) {
         super(context);
@@ -59,8 +63,10 @@ public class ChartLayout extends LinearLayout implements CompoundButton.OnChecke
     private void init(Context context) {
         View view = inflate(context, R.layout.layout_chart, this);
         setOrientation(VERTICAL);
+        mChipHeight = context.getResources().getDimensionPixelSize(R.dimen.chip_height);
         mChartView = view.findViewById(R.id.chart);
         mChartControlView = view.findViewById(R.id.chartControl);
+        mChipGroup = view.findViewById(R.id.groupLinesControls);
 
         mChartControlView.setListener(new ChartControlView.Listener() {
             @Override
@@ -120,26 +126,48 @@ public class ChartLayout extends LinearLayout implements CompoundButton.OnChecke
         mChartCheckboxes = new HashMap<>(data.getYValues().size());
         mDisbledCharts = new HashSet<>(data.getYValues().size());
 
-        int states[][] = {{android.R.attr.state_checked}, {}};
+        int states[][] = {{android.R.attr.state_selected}, {}};
 
-        LayoutInflater inflater = LayoutInflater.from(getContext());
+        ChipGroup.LayoutParams params = new ChipGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
+                mChipHeight);
 
-        int count = 0;
+        ShapeAppearanceModel shapeModel = new ShapeAppearanceModel();
+        shapeModel.setAllCorners(CornerFamily.ROUNDED, Integer.MAX_VALUE);
+
+        TypedValue typedValue = new TypedValue();
+        Resources.Theme theme = getContext().getTheme();
+        theme.resolveAttribute(R.attr.bgChartColor, typedValue, true);
+
         for (ChartData.YData yData : data.getYValues()) {
-            CheckBox checkbox = (CheckBox) inflater.inflate(R.layout.chart_checkbox, null);
+
+            int colorsSolid[] = {Color.parseColor(yData.getColor()), typedValue.data};
+            int colorsStroke[] = {Color.TRANSPARENT, Color.parseColor(yData.getColor())};
+            int colorsText[] = {Color.WHITE, Color.parseColor(yData.getColor())};
+
+            Chip checkbox = new Chip(getContext());
+            checkbox.setChipStartPaddingResource(R.dimen.side_margin);
+            checkbox.setChipEndPaddingResource(R.dimen.side_margin);
+            checkbox.setLayoutParams(params);
+            checkbox.setCheckable(true);
+            checkbox.setClickable(true);
+            checkbox.setFocusable(true);
+            checkbox.setTypeface(null, Typeface.BOLD);
+            checkbox.setShapeAppearanceModel(shapeModel);
+            checkbox.setTextColor(new ColorStateList(states, colorsText));
+            checkbox.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
+            checkbox.setChipStrokeWidth(4);
+            checkbox.setChipStrokeColor(new ColorStateList(states, colorsStroke));
+            checkbox.setCheckedIconResource(R.drawable.ic_done_white_24dp);
             mChartCheckboxes.put(yData.getVarName(), checkbox);
-            int colors[] = {Color.parseColor(yData.getColor()), Color.BLACK};
-            checkbox.setButtonTintList(new ColorStateList(states, colors));
+            checkbox.setChipBackgroundColor(new ColorStateList(states, colorsSolid));
             checkbox.setText(yData.getAlias());
             checkbox.setChecked(true);
             checkbox.setTag(yData.getVarName());
             checkbox.setOnCheckedChangeListener(this);
-            addView(checkbox);
-            if (count++ < data.getYValues().size() - 1) {
-                View deli = inflater.inflate(R.layout.chart_checkbox_delimeter, this, false);
-                mDelimeters.add(deli);
-                addView(deli);
-            }
+
+            checkbox.setOnLongClickListener(this);
+
+            mChipGroup.addView(checkbox);
         }
     }
 
@@ -162,6 +190,14 @@ public class ChartLayout extends LinearLayout implements CompoundButton.OnChecke
 
     public void setListener(Listener listener) {
         mListener = listener;
+    }
+
+    @Override
+    public boolean onLongClick(View v) {
+        for (CompoundButton box : mChartCheckboxes.values()) {
+            box.setChecked(v == box);
+        }
+        return true;
     }
 
     public interface Listener {
@@ -215,13 +251,11 @@ public class ChartLayout extends LinearLayout implements CompoundButton.OnChecke
         Resources.Theme theme = getContext().getTheme();
         theme.resolveAttribute(R.attr.bgChartColor, typedValue, true);
         setBackgroundColor(typedValue.data);
-        theme.resolveAttribute(R.attr.checkboxColor, typedValue, true);
-        for (CompoundButton button : mChartCheckboxes.values()) {
-            button.setTextColor(typedValue.data);
-        }
-        theme.resolveAttribute(R.attr.chartDelimeter, typedValue, true);
-        for (View deli: mDelimeters) {
-            deli.setBackgroundColor(typedValue.data);
+
+        int states[][] = {{android.R.attr.state_selected}, {}};
+        for (ChartData.YData yData : mData.getYValues()) {
+            int colorsSolid[] = {Color.parseColor(yData.getColor()), typedValue.data};
+            mChartCheckboxes.get(yData.getVarName()).setChipBackgroundColor(new ColorStateList(states, colorsSolid));
         }
     }
 }

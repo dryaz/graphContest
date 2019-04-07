@@ -23,6 +23,10 @@ public class JsonGraphReader {
 
     private @interface Type {
         String LINE = "line";
+        String LINE_2_Y = "line";
+        String BAR = "line";
+        String PERCENTAGE = "line";
+
         String X = "x";
     }
 
@@ -55,6 +59,7 @@ public class JsonGraphReader {
                         }
                     }
                     String currentType = types.get(chartId);
+                    nextChartData.setType(currentType);
                     switch (currentType) {
                         case Type.LINE:
                             nextChartData.addYValues(new ChartData.YData(chartId,
