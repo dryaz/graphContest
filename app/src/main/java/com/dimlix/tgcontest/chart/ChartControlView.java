@@ -58,6 +58,7 @@ class ChartControlView extends View {
     private long mStartToggleTime = -1;
     // Needs to animate chart when user toggle line/
     private long mLastMaxPossibleYever;
+    private long mLastMinPossibleYever;
 
     private Listener mListener;
 
@@ -287,6 +288,7 @@ class ChartControlView extends View {
                 mChartData.getSize() - 1);
 
         long maxPossibleYever = 0;
+        long minPossibleYever = Integer.MAX_VALUE;
         for (int k = 0; k < mChartData.getYValues().size(); k++) {
             ChartData.YData yData = mChartData.getYValues().get(k);
             if (!yData.isShown()) continue;
@@ -294,6 +296,7 @@ class ChartControlView extends View {
             for (int i = firstPointToShow; i < lastPointToShow; i++) {
                 Long nextValue = yData.getValues().get(i);
                 if (maxPossibleYever < nextValue) maxPossibleYever = nextValue;
+                if (minPossibleYever > nextValue) minPossibleYever = nextValue;
             }
         }
 
@@ -302,10 +305,16 @@ class ChartControlView extends View {
             maxPossibleYever = mLastMaxPossibleYever;
         }
 
+        if (minPossibleYever == Integer.MAX_VALUE) {
+            // Prevent single line from flying up
+            minPossibleYever = mLastMinPossibleYever;
+        }
 
         for (int k = 0; k < mChartData.getYValues().size(); k++) {
-            float masPossibleYeverComputed =
+            float maxPossibleYeverComputed =
                     mLastMaxPossibleYever + (maxPossibleYever - mLastMaxPossibleYever) * progress;
+            float minPossibleYeverComputed =
+                    mLastMinPossibleYever + (minPossibleYever - mLastMinPossibleYever) * progress;
 
             ChartData.YData yData = mChartData.getYValues().get(k);
 
@@ -315,19 +324,21 @@ class ChartControlView extends View {
                 }
             } else {
                 if (yData.isShown()) {
-                    masPossibleYeverComputed = maxPossibleYever;
+                    maxPossibleYeverComputed = maxPossibleYever;
+                    minPossibleYeverComputed = minPossibleYever;
                 } else {
-                    masPossibleYeverComputed = mLastMaxPossibleYever;
+                    maxPossibleYeverComputed = mLastMaxPossibleYever;
+                    minPossibleYeverComputed = mLastMinPossibleYever;
                 }
             }
-            float yStep = (float) getHeight() / masPossibleYeverComputed;
+            float yStep = (float) getHeight() / (maxPossibleYeverComputed - minPossibleYeverComputed);
 
             mPathPoints[0] = (firstPointToShow * mStepXForMaxScale - translation) * scale;
-            mPathPoints[1] = getHeight() - yData.getValues().get(0) * yStep;
+            mPathPoints[1] = getHeight() - (yData.getValues().get(0) - minPossibleYeverComputed) * yStep;
             int pointIndex = 2;
             for (int i = firstPointToShow + 1; i <= lastPointToShow; i++) {
                 float x = (i * mStepXForMaxScale - translation) * scale;
-                float y = getHeight() - yData.getValues().get(i) * yStep;
+                float y = getHeight() - (yData.getValues().get(i) - minPossibleYeverComputed) * yStep;
                 mPathPoints[pointIndex] = x;
                 mPathPoints[pointIndex + 1] = y;
                 mPathPoints[pointIndex + 2] = x;
@@ -356,6 +367,7 @@ class ChartControlView extends View {
         } else {
             mStartToggleTime = -1;
             mLastMaxPossibleYever = maxPossibleYever;
+            mLastMinPossibleYever = minPossibleYever;
             if (!mLinesToToggle.isEmpty()) {
                 mLinesToToggle.clear();
                 invalidate();

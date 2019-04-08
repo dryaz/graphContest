@@ -1,5 +1,6 @@
 package com.dimlix.tgcontest.chart;
 
+import android.animation.ObjectAnimator;
 import android.content.Context;
 import android.content.res.ColorStateList;
 import android.content.res.Resources;
@@ -176,12 +177,21 @@ public class ChartLayout extends LinearLayout implements CompoundButton.OnChecke
         String yVarName = (String) buttonView.getTag();
         for (ChartData.YData yData : mData.getYValues()) {
             if (yData.getVarName().equals(yVarName)) {
-                yData.setShown(isChecked);
                 if (!isChecked) {
-                    mDisbledCharts.add(yData.getVarName());
+                    if (mDisbledCharts.size() + 1 == mChartCheckboxes.size()) {
+                        buttonView.setChecked(true);
+                        ObjectAnimator
+                                .ofFloat(buttonView, "translationX", 0, 8, -8, 5, -5, 2, -2, 0)
+                                .setDuration(300)
+                                .start();
+                        return;
+                    } else {
+                        mDisbledCharts.add(yData.getVarName());
+                    }
                 } else {
                     mDisbledCharts.remove(yData.getVarName());
                 }
+                yData.setShown(isChecked);
             }
         }
         mChartView.onYChartToggled(yVarName);
@@ -194,6 +204,7 @@ public class ChartLayout extends LinearLayout implements CompoundButton.OnChecke
 
     @Override
     public boolean onLongClick(View v) {
+        ((CompoundButton) v).setChecked(true);
         for (CompoundButton box : mChartCheckboxes.values()) {
             box.setChecked(v == box);
         }
