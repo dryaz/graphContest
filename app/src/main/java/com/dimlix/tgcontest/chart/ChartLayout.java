@@ -14,6 +14,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CompoundButton;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import com.dimlix.tgcontest.R;
 import com.dimlix.tgcontest.model.ChartData;
@@ -38,6 +39,9 @@ public class ChartLayout extends LinearLayout implements CompoundButton.OnChecke
     private ChartView mChartView;
     private ChartControlView mChartControlView;
 
+    private TextView mChartTitle;
+    private TextView mChartSelectedRange;
+
     private ChartData mData;
 
     private Listener mListener;
@@ -46,6 +50,8 @@ public class ChartLayout extends LinearLayout implements CompoundButton.OnChecke
     private int mRightBoarder = MAX_DISCRETE_PROGRESS;
     private Map<String, Chip> mChartCheckboxes;
     private Set<String> mDisbledCharts;
+
+    private int mSideMargin;
 
     private ViewGroup mChipGroup;
 
@@ -64,10 +70,15 @@ public class ChartLayout extends LinearLayout implements CompoundButton.OnChecke
     private void init(Context context) {
         View view = inflate(context, R.layout.layout_chart, this);
         setOrientation(VERTICAL);
+
+        mSideMargin = getContext().getResources().getDimensionPixelSize(R.dimen.side_margin);
         mChipHeight = context.getResources().getDimensionPixelSize(R.dimen.chip_height);
         mChartView = view.findViewById(R.id.chart);
         mChartControlView = view.findViewById(R.id.chartControl);
         mChipGroup = view.findViewById(R.id.groupLinesControls);
+
+        mChartTitle = view.findViewById(R.id.tvChartTitle);
+        mChartSelectedRange = view.findViewById(R.id.tvChartDate);
 
         mChartControlView.setListener(new ChartControlView.Listener() {
             @Override
@@ -107,16 +118,36 @@ public class ChartLayout extends LinearLayout implements CompoundButton.OnChecke
         });
     }
 
+    float leftPercentagePos;
+    float rightPercentagePos;
+    int firstPointToShow;
+    int lastPointToShow;
+
     private void setRegion(int left, int right) {
         mLeftBoarder = left;
         mRightBoarder = right;
         mChartView.setMaxVisibleRegionPercent(mLeftBoarder, mRightBoarder);
+
+
+        leftPercentagePos = (float) left / ChartLayout.MAX_DISCRETE_PROGRESS;
+        rightPercentagePos = (float) right / ChartLayout.MAX_DISCRETE_PROGRESS;
+
+        firstPointToShow = (int) (leftPercentagePos * (mData.getSize() - 1));
+        lastPointToShow = (int) (rightPercentagePos * (mData.getSize() - 1));
+
+        mChartSelectedRange.setText(getContext().getString(R.string.date_range,
+                mData.getXStringValues().get(firstPointToShow).getFullDate(),
+                mData.getXStringValues().get(lastPointToShow).getFullDate()));
     }
 
     public void setData(ChartData data) {
         mData = data;
         mChartView.setChartData(data);
         mChartControlView.setChartData(data);
+
+        mChartSelectedRange.setText(getContext().getString(R.string.date_range,
+                mData.getXStringValues().get(0).getFullDate(),
+                mData.getXStringValues().get(mData.getSize() - 1).getFullDate()));
 
         int min = mLeftBoarder;
         int max = mRightBoarder;
@@ -268,5 +299,9 @@ public class ChartLayout extends LinearLayout implements CompoundButton.OnChecke
             int colorsSolid[] = {Color.parseColor(yData.getColor()), typedValue.data};
             mChartCheckboxes.get(yData.getVarName()).setChipBackgroundColor(new ColorStateList(states, colorsSolid));
         }
+
+        theme.resolveAttribute(android.R.attr.textColorPrimary, typedValue, true);
+        mChartTitle.setTextColor(typedValue.data);
+        mChartSelectedRange.setTextColor(typedValue.data);
     }
 }

@@ -1,7 +1,5 @@
 package com.dimlix.tgcontest.model;
 
-import android.util.Pair;
-
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -10,10 +8,11 @@ import java.util.Locale;
 
 public class ChartData {
     private List<Long> mXValues;
-    private List<Pair<String, String>> mXStringValues = new ArrayList<>();
+    private List<ChartDates> mXStringValues = new ArrayList<>();
     private List<YData> mYValues = new ArrayList<>();
-    private static final SimpleDateFormat SHORT_DATE_FORMAT = new SimpleDateFormat("MMM dd", Locale.US);
-    private static final SimpleDateFormat LONG_DATE_FORMAT = new SimpleDateFormat("EEE, dd MMM yyyy", Locale.US);
+    private static final SimpleDateFormat SHORT_DATE_FORMAT = new SimpleDateFormat("dd MMM", Locale.US);
+    private static final SimpleDateFormat LONG_DATE_FORMAT = new SimpleDateFormat("dd MMM yyyy", Locale.US);
+    private static final SimpleDateFormat EXTENDED_DATE_FORMAT = new SimpleDateFormat("EEE, dd MMM yyyy", Locale.US);
 
     private String mType;
 
@@ -37,11 +36,14 @@ public class ChartData {
         return mXValues;
     }
 
-    public List<Pair<String, String>> getXStringValues() {
+    public List<ChartDates> getXStringValues() {
         if (mXStringValues.isEmpty()) {
             for (int i = 0; i < mXValues.size(); i++) {
-                mXStringValues.add(Pair.create(SHORT_DATE_FORMAT.format(new Date(mXValues.get(i))),
-                        LONG_DATE_FORMAT.format(new Date(mXValues.get(i)))));
+                mXStringValues.add(new ChartDates(
+                        SHORT_DATE_FORMAT.format(new Date(mXValues.get(i))),
+                        LONG_DATE_FORMAT.format(new Date(mXValues.get(i))),
+                        EXTENDED_DATE_FORMAT.format(new Date(mXValues.get(i)))
+                ));
             }
         }
         return mXStringValues;
@@ -120,6 +122,30 @@ public class ChartData {
                     ", mColor='" + mColor + '\'' +
                     ", mValues=" + mValues +
                     '}';
+        }
+    }
+
+    public static class ChartDates {
+        private String dateMonthOnly;
+        private String fullDate;
+        private String extendedDate;
+
+        public ChartDates(String dateMonthOnly, String fullDate, String extendedDate) {
+            this.dateMonthOnly = dateMonthOnly;
+            this.fullDate = fullDate;
+            this.extendedDate = extendedDate;
+        }
+
+        public String getDateMonthOnly() {
+            return dateMonthOnly;
+        }
+
+        public String getFullDate() {
+            return fullDate;
+        }
+
+        public String getExtendedDate() {
+            return extendedDate;
         }
     }
 }

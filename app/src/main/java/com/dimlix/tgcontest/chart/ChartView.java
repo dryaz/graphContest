@@ -87,7 +87,6 @@ class ChartView extends View {
 
     private int mSideMargin;
 
-
     private int mAxisXHeight;
     private int mPrevDistance;
 
@@ -362,7 +361,7 @@ class ChartView extends View {
 
             }
             while (nextIndexToDrawXAxisValueToAnimate < lastPointToShowForAxis) {
-                String text = mChartData.getXStringValues().get(nextIndexToDrawXAxisValueToAnimate).first;
+                String text = mChartData.getXStringValues().get(nextIndexToDrawXAxisValueToAnimate).getDateMonthOnly();
                 float x = (nextIndexToDrawXAxisValueToAnimate * mStepXForMaxScale - translation) * scale;
                 float xWithMargin = x + (1 - 2 * x / getWidth()) * mSideMargin;
                 canvas.drawText(text, xWithMargin, getHeight() - (float) mAxisTextSize / 2,
@@ -373,7 +372,7 @@ class ChartView extends View {
 
         while (nextIndexToDrawXAxisValue < lastPointToShowForAxis) {
             mAxisTextPaint.setAlpha(255);
-            String text = mChartData.getXStringValues().get(nextIndexToDrawXAxisValue).first;
+            String text = mChartData.getXStringValues().get(nextIndexToDrawXAxisValue).getDateMonthOnly();
             float x = (nextIndexToDrawXAxisValue * mStepXForMaxScale - translation) * scale;
             float xWithMargin = x + (1 - 2 * x / getWidth()) * mSideMargin;
             canvas.drawText(text, xWithMargin, getHeight() - (float) mAxisTextSize / 2, mAxisTextPaint);
@@ -445,7 +444,7 @@ class ChartView extends View {
                         mAxisSelectedCircleSize, paint);
             }
 
-            mInfoPanelViewHolder.mInfoViewTitle.setText(mChartData.getXStringValues().get(nearestIndexTouched).second);
+            mInfoPanelViewHolder.mInfoViewTitle.setText(mChartData.getXStringValues().get(nearestIndexTouched).getExtendedDate());
 
             int widthSpec = MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(ViewGroup.LayoutParams.WRAP_CONTENT), MeasureSpec.UNSPECIFIED);
             int heightSpec = MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(ViewGroup.LayoutParams.WRAP_CONTENT), MeasureSpec.UNSPECIFIED);

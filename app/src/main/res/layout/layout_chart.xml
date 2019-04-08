@@ -1,11 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
 <merge xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+       xmlns:app="http://schemas.android.com/apk/res-auto"
+       xmlns:tools="http://schemas.android.com/tools"
+       android:orientation="vertical"
+       tools:parentTag="android.widget.LinearLayout">
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingStart="@dimen/side_margin"
+        android:paddingEnd="@dimen/side_margin">
+
+        <TextView
+            android:id="@+id/tvChartTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-black"
+            android:textColor="?android:textColorPrimary"
+            android:textSize="14sp"
+            android:text="Visitors"/>
+
+        <TextView
+            android:id="@+id/tvChartDate"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end"
+            android:fontFamily="sans-serif-medium"
+            android:textColor="?android:textColorPrimary"
+            android:textSize="14sp"
+            android:text="12 Apr 2019 - 30 May 2020"/>
+    </FrameLayout>
 
     <com.dimlix.tgcontest.chart.ChartView
         android:id="@+id/chart"
         android:layout_width="match_parent"
-        android:layout_height="300dp" />
+        android:layout_height="300dp"
+        android:layout_marginTop="16dp"/>
 
     <com.dimlix.tgcontest.chart.ChartControlView
         android:id="@+id/chartControl"
@@ -13,7 +43,7 @@
         android:layout_height="60dp"
         android:layout_marginStart="@dimen/side_margin"
         android:layout_marginTop="8dp"
-        android:layout_marginEnd="@dimen/side_margin" />
+        android:layout_marginEnd="@dimen/side_margin"/>
 
     <com.google.android.material.chip.ChipGroup
         android:id="@+id/groupLinesControls"
@@ -21,7 +51,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="@dimen/side_margin"
         android:layout_marginTop="@dimen/side_margin"
-        app:chipSpacingVertical="8dp"
         android:layout_marginEnd="@dimen/side_margin"
-        android:layout_marginBottom="@dimen/side_margin" />
+        android:layout_marginBottom="@dimen/side_margin"
+        app:chipSpacingVertical="8dp"/>
 </merge>
