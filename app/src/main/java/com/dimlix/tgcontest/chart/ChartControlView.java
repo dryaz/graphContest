@@ -60,6 +60,9 @@ class ChartControlView extends View {
     private long mLastMaxPossibleYever;
     private long mLastMinPossibleYever;
 
+    private long[] mLastMaxPossibleEachLine;
+    private long[] mLastMinPossibleEachLine;
+
     private Listener mListener;
 
     private float mMinPos = 0;
@@ -289,6 +292,135 @@ class ChartControlView extends View {
         int lastPointToShow = Math.min((int) Math.floor(mRightCurrentXBoarderValue / mStepXForMaxScale) + 1,
                 mChartData.getSize() - 1);
 
+        if (mChartData.isDoubleYAxis()) {
+            drawChartForEachLine(canvas, progress, scale, translation, firstPointToShow, lastPointToShow);
+        } else {
+            drawCompoundChartLines(canvas, progress, scale, translation, firstPointToShow, lastPointToShow);
+        }
+    }
+
+    long[] maxPossibleYever = null;
+    long[] minPossibleYever = null;
+    float[] maxPossibleYeverComputed = null;
+    float[] minPossibleYeverComputed = null;
+    float[] yStep = null;
+
+    private void drawChartForEachLine(Canvas canvas, float progress, float scale, float translation, int firstPointToShow, int lastPointToShow) {
+        if (maxPossibleYever == null) {
+            maxPossibleYever = new long[mLastMinPossibleEachLine.length];
+            minPossibleYever = new long[mLastMinPossibleEachLine.length];
+            maxPossibleYeverComputed = new float[mLastMinPossibleEachLine.length];
+            minPossibleYeverComputed = new float[mLastMinPossibleEachLine.length];
+            yStep = new float[mLastMinPossibleEachLine.length];
+        }
+        for (int i = 0; i < maxPossibleYever.length; i++) {
+            maxPossibleYever[i] = 0;
+            minPossibleYever[i] = Integer.MAX_VALUE;
+        }
+        boolean needAnim = false;
+        for (int k = 0; k < mChartData.getYValues().size(); k++) {
+            ChartData.YData yData = mChartData.getYValues().get(k);
+            if (!yData.isShown()) continue;
+            // Extra iteration over visible fragment needed to find out y scale factor.
+            for (int i = firstPointToShow; i < lastPointToShow; i++) {
+                Long nextValue = yData.getValues().get(i);
+                if (maxPossibleYever[k] < nextValue) maxPossibleYever[k] = nextValue;
+                if (minPossibleYever[k] > nextValue) minPossibleYever[k] = nextValue;
+            }
+
+            if (mLastMaxPossibleEachLine[k] == -1) {
+                mLastMaxPossibleEachLine[k] = maxPossibleYever[k];
+            }
+            if (mLastMinPossibleEachLine[k] == -1) {
+                mLastMinPossibleEachLine[k] = minPossibleYever[k];
+            }
+            needAnim = needAnim
+                    || mLastMaxPossibleEachLine[k] != maxPossibleYever[k]
+                    || mLastMinPossibleEachLine[k] != minPossibleYever[k];
+
+        }
+
+        float x;
+        float y;
+
+        for (int k = 0; k < mChartData.getYValues().size(); k++) {
+            maxPossibleYeverComputed[k] =
+                    mLastMaxPossibleEachLine[k] + (maxPossibleYever[k] - mLastMaxPossibleEachLine[k]) * progress;
+            minPossibleYeverComputed[k] =
+                    mLastMinPossibleEachLine[k] + (minPossibleYever[k] - mLastMinPossibleEachLine[k]) * progress;
+
+            ChartData.YData yData = mChartData.getYValues().get(k);
+
+            if (!mLinesToToggle.contains(yData.getVarName())) {
+                if (!yData.isShown()) {
+                    continue;
+                }
+            } else {
+                if (yData.isShown()) {
+                    maxPossibleYeverComputed[k] = maxPossibleYever[k];
+                    minPossibleYeverComputed[k] = minPossibleYever[k];
+                } else {
+                    maxPossibleYeverComputed[k] = mLastMaxPossibleEachLine[k];
+                    minPossibleYeverComputed[k] = mLastMinPossibleEachLine[k];
+                }
+            }
+            float yStep = (float) getHeight() / (maxPossibleYeverComputed[k] - minPossibleYeverComputed[k]);
+            x = (firstPointToShow * mStepXForMaxScale - translation) * scale;
+            x = x + (1 - 2 * x / getWidth()) * mSideMargin;
+            mPathPoints[0] = x;
+            y = getHeight() - (yData.getValues().get(0) - minPossibleYeverComputed[k]) * yStep;
+            y = y + (1 - 2 * y / getHeight()) * mDragBoarderHeight;
+            mPathPoints[1] = y;
+            int pointIndex = 2;
+            for (int i = firstPointToShow + 1; i <= lastPointToShow; i++) {
+                x = (i * mStepXForMaxScale - translation) * scale;
+                x = x + (1 - 2 * x / getWidth()) * mSideMargin;
+                y = getHeight() - (yData.getValues().get(i) - minPossibleYeverComputed[k]) * yStep;
+                y = y + (1 - 2 * y / getHeight()) * mDragBoarderHeight;
+                mPathPoints[pointIndex] = x;
+                mPathPoints[pointIndex + 1] = y;
+                mPathPoints[pointIndex + 2] = x;
+                mPathPoints[pointIndex + 3] = y;
+                pointIndex += 4;
+            }
+
+            Paint paint = mPaints.get(yData.getVarName());
+            if (paint == null) {
+                throw new RuntimeException("There is no color info for " + yData.getVarName());
+            }
+
+            if (mLinesToToggle.contains(yData.getVarName())) {
+                if (yData.isShown()) {
+                    paint.setAlpha(Math.min(((int) (255 * progress)), 255));
+                } else {
+                    paint.setAlpha(Math.max((int) (255 * (1 - progress)), 0));
+                }
+            }
+
+            canvas.drawLines(mPathPoints, 0, pointIndex - 1, paint);
+        }
+
+        drawControlsOverlay(canvas);
+        loop(maxPossibleYever, minPossibleYever, progress);
+    }
+
+    private void loop(long[] maxPossibleYever, long[] minPossibleYever, float progress) {
+        if (progress < 1 && (!mLinesToToggle.isEmpty())) {
+            invalidate();
+        } else {
+            mStartToggleTime = -1;
+            for (int i = 0; i < mLastMaxPossibleEachLine.length; i++) {
+                mLastMaxPossibleEachLine[i] = maxPossibleYever[i];
+                mLastMinPossibleEachLine[i] = minPossibleYever[i];
+            }
+            if (!mLinesToToggle.isEmpty()) {
+                mLinesToToggle.clear();
+                invalidate();
+            }
+        }
+    }
+
+    private void drawCompoundChartLines(Canvas canvas, float progress, float scale, float translation, int firstPointToShow, int lastPointToShow) {
         long maxPossibleYever = 0;
         long minPossibleYever = Integer.MAX_VALUE;
         for (int k = 0; k < mChartData.getYValues().size(); k++) {
@@ -372,18 +504,11 @@ class ChartControlView extends View {
             canvas.drawLines(mPathPoints, 0, pointIndex - 1, paint);
         }
 
-        if (progress < 1 && (!mLinesToToggle.isEmpty())) {
-            invalidate();
-        } else {
-            mStartToggleTime = -1;
-            mLastMaxPossibleYever = maxPossibleYever;
-            mLastMinPossibleYever = minPossibleYever;
-            if (!mLinesToToggle.isEmpty()) {
-                mLinesToToggle.clear();
-                invalidate();
-            }
-        }
+        drawControlsOverlay(canvas);
+        loop(maxPossibleYever, minPossibleYever, progress);
+    }
 
+    private void drawControlsOverlay(Canvas canvas) {
         // Draw left portion of mask
         float leftRight = mMinPos / ChartLayout.MAX_DISCRETE_PROGRESS * getWidth();
         canvas.save();
@@ -429,6 +554,20 @@ class ChartControlView extends View {
         canvas.drawRoundRect(leftElement, topElement, leftElement + mDragZoneElementWidth, topElement + mDragZoneElementHeight, mDragZoneRadius, mDragZoneRadius, mDragElementPaint);
     }
 
+    private void loop(long maxPossibleYever, long minPossibleYever, float progress) {
+        if (progress < 1 && (!mLinesToToggle.isEmpty())) {
+            invalidate();
+        } else {
+            mStartToggleTime = -1;
+            mLastMaxPossibleYever = maxPossibleYever;
+            mLastMinPossibleYever = minPossibleYever;
+            if (!mLinesToToggle.isEmpty()) {
+                mLinesToToggle.clear();
+                invalidate();
+            }
+        }
+    }
+
     public void setChartData(final ChartData data) {
 
         if (getWidth() == 0) {
@@ -439,6 +578,15 @@ class ChartControlView extends View {
                 }
             });
             return;
+        }
+
+        if (data.isDoubleYAxis()) {
+            mLastMaxPossibleEachLine = new long[data.getYValues().size()];
+            mLastMinPossibleEachLine = new long[data.getYValues().size()];
+            for (int i = 0; i < mLastMaxPossibleEachLine.length; i++) {
+                mLastMaxPossibleEachLine[i] = -1;
+                mLastMinPossibleEachLine[i] = -1;
+            }
         }
 
         mPathPoints = new float[data.getXValues().size() * 4];
