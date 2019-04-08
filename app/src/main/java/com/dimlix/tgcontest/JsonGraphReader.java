@@ -78,6 +78,9 @@ public class JsonGraphReader {
                     break;
             }
         }
+        nextChartData.setDoubleYAxis(chartObject.has("y_scaled") && chartObject.getBoolean("y_scaled"));
+        nextChartData.setStacked(chartObject.has("stacked") && chartObject.getBoolean("stacked"));
+        nextChartData.setPercentage(chartObject.has("percentage") && chartObject.getBoolean("percentage"));
         return nextChartData;
     }
 

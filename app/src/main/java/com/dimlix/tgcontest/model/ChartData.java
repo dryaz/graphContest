@@ -16,6 +16,7 @@ public class ChartData {
 
     private boolean mPercentage = false;
     private boolean mStacked = false;
+    private boolean mDoubleYAxis;
 
     private String mName;
 
@@ -82,6 +83,14 @@ public class ChartData {
 
     public int getSize() {
         return mXValues.size();
+    }
+
+    public boolean isDoubleYAxis() {
+        return mDoubleYAxis;
+    }
+
+    public void setDoubleYAxis(boolean doubleYAxis) {
+        mDoubleYAxis = doubleYAxis;
     }
 
     public static class YData {
