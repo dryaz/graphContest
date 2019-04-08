@@ -43,7 +43,7 @@ class ChartView extends View {
     private static final int NUM_HOR_AXIS = 6;
     private static final int NUM_X_AXIS_MIN = 3;
     private static final int NUM_X_AXIS_MAX = 5;
-    public static final int OFFSET_DRAW_NUM = 5;
+    public static final int OFFSET_DRAW_NUM = 2;
     public static final int OFFSET_X_AXIS_DRAW_NUM = 8;
     private static final int DISTANCE_THRESHOLD = 4;
     public static final int INFO_PANEL_SHIFT = 50;
@@ -230,8 +230,8 @@ class ChartView extends View {
         mAxisPaint.setAlpha(MAX_AXIS_ALPHA);
 
         int firstPointToShow =
-                Math.max((int) Math.floor(mLeftCurrentXBoarderValue / mStepXForMaxScale) - OFFSET_DRAW_NUM, 0);
-        int lastPointToShow = Math.min((int) Math.floor(mRightCurrentXBoarderValue / mStepXForMaxScale) + OFFSET_DRAW_NUM,
+                Math.max((int) Math.floor((mLeftCurrentXBoarderValue - mSideMargin) / mStepXForMaxScale) - OFFSET_DRAW_NUM, 0);
+        int lastPointToShow = Math.min((int) Math.ceil((mRightCurrentXBoarderValue + mSideMargin) / mStepXForMaxScale) + OFFSET_DRAW_NUM,
                 mChartData.getSize() - 1);
 
         long maxPossibleYever = 0;
