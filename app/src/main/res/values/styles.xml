@@ -10,13 +10,13 @@
         <item name="colorPrimaryDark">@color/colorPrimaryDarkLight</item>
         <item name="bgChartColor">#fff</item>
         <item name="axisChartTextColor">#808a91</item>
-        <item name="axisChartColor">#e3e3e4</item>
+        <item name="axisChartColor">#8e8e93</item>
         <item name="axisChartCouchedCircleFillColor">#fff</item>
         <item name="infoDateTextColor">#000</item>
         <item name="infoBgColor">#ffffff</item>
         <item name="chartDelimeter">#f1f1f2</item>
         <item name="maskColor">#caf0f0f0</item>
-        <item name="maskDragColor">#34517da2</item>
+        <item name="maskDragColor">#7f86A9C4</item>
         <item name="checkboxColor">#000</item>
     </style>
 
@@ -27,16 +27,16 @@
         <item name="android:textColorPrimaryInverse">@color/textColorPrimaryInvertedLight</item>
         <item name="colorPrimary">@color/colorPrimaryDark</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDarkDark</item>
-        <item name="bgChartColor">#1d2733</item>
+        <item name="bgChartColor">@color/colorPrimaryDark</item>
         <item name="axisChartTextColor">#506372</item>
-        <item name="axisChartColor">#131c26</item>
+        <item name="axisChartColor">#707c8c</item>
         <item name="axisChartCouchedCircleFillColor">#1d2733</item>
         <item name="android:windowBackground">@color/windowBackgroundDark</item>
         <item name="infoDateTextColor">#e5eff5</item>
         <item name="infoBgColor">#202b38</item>
         <item name="chartDelimeter">#131c26</item>
         <item name="maskColor">#ca151e27</item>
-        <item name="maskDragColor">#54517da2</item>
+        <item name="maskDragColor">#7f6F899E</item>
         <item name="checkboxColor">#fff</item>
 
     </style>

@@ -7,8 +7,8 @@
     <color name="textColorPrimaryLight">#000</color>
     <color name="windowBackgroundLight">#f0f0f0</color>
 
-    <color name="colorPrimaryDark">#212d3b</color>
-    <color name="colorPrimaryDarkDark">#212d3b</color>
+    <color name="colorPrimaryDark">#242f3e</color>
+    <color name="colorPrimaryDarkDark">#242f3e</color>
     <color name="colorAccentDark">#76d672</color>
     <color name="textColorPrimaryInvertedDark">#fff</color>
     <color name="textColorPrimaryDark">#fff</color>

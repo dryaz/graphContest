@@ -47,8 +47,9 @@ class ChartView extends View {
     public static final int OFFSET_X_AXIS_DRAW_NUM = 8;
     private static final int DISTANCE_THRESHOLD = 4;
     public static final int INFO_PANEL_SHIFT = 50;
-    public static final int MAX_AXIS_ALPHA = 100;
+    public static final int MAX_AXIS_ALPHA = 19;
     private static final long TOUCH_THRESHOLD = 500;
+    private static final long CLICK_THRESHOLD = 100;
 
     private float[] mPathPoints;
     private Map<String, Paint> mPaints = new HashMap<>();
@@ -99,6 +100,9 @@ class ChartView extends View {
     private float mXDesisionPos = -1;
     private float mYDesisionPos = -1;
     private boolean mDecisionMade = false;
+
+    private float mLastInfoPanelPositionX = -1;
+    private boolean mInTouchPanelBounds = false;
 
     public ChartView(Context context) {
         super(context);
@@ -152,6 +156,14 @@ class ChartView extends View {
                 if (event.getAction() == MotionEvent.ACTION_DOWN
                         || event.getAction() == MotionEvent.ACTION_MOVE) {
                     if (mFirstIteractionTime < 0) {
+                        mInTouchPanelBounds = mLastInfoPanelPositionX > 0
+                                && event.getY() > INFO_PANEL_SHIFT
+                                && event.getY() < INFO_PANEL_SHIFT + mInfoPanelViewHolder.mInfoView.getHeight()
+                                && event.getX() > mLastInfoPanelPositionX
+                                && event.getX() < mLastInfoPanelPositionX + mInfoPanelViewHolder.mInfoView.getWidth();
+                        if (mInTouchPanelBounds) {
+                            mTouchXValue = -1;
+                        }
                         mFirstIteractionTime = System.currentTimeMillis();
                     } else if (System.currentTimeMillis() - mFirstIteractionTime > TOUCH_THRESHOLD) {
                         mDecisionMade = true;
@@ -176,7 +188,11 @@ class ChartView extends View {
                     }
                 }
                 if (event.getAction() == MotionEvent.ACTION_UP) {
-                    mTouchXValue = -1;
+                    if (mInTouchPanelBounds || System.currentTimeMillis() - mFirstIteractionTime >= CLICK_THRESHOLD) {
+                        mTouchXValue = -1;
+                    } else {
+                        mTouchXValue = event.getX();
+                    }
                     mFirstIteractionTime = -1;
                 }
                 invalidate();
@@ -338,7 +354,7 @@ class ChartView extends View {
             String text = mChartData.getXStringValues().get(nextIndexToDrawXAxisValue).first;
             float x = (nextIndexToDrawXAxisValue * mStepXForMaxScale - translation) * scale;
             float xWithMargin = x + (1 - 2 * x / getWidth()) * mSideMargin;
-            canvas.drawText(text, xWithMargin,getHeight() - (float) mAxisTextSize / 2, mAxisTextPaint);
+            canvas.drawText(text, xWithMargin, getHeight() - (float) mAxisTextSize / 2, mAxisTextPaint);
             if (xAxisValuesProgress < 1) {
                 nextIndexToDrawXAxisValue += animatedStep;
             } else {
@@ -399,10 +415,10 @@ class ChartView extends View {
                     throw new RuntimeException("There is no color info for " + yData.getVarName());
                 }
                 canvas.drawCircle(xValToDraw,
-                        getHeightWithoutXAxis() - yValue * yStep,
+                        getHeightWithoutXAxis() - yValue * yStep + mSideMargin,
                         mAxisSelectedCircleSize, mTouchedCirclePaint);
                 canvas.drawCircle(xValToDraw,
-                        getHeightWithoutXAxis() - yValue * yStep,
+                        getHeightWithoutXAxis() - yValue * yStep + mSideMargin,
                         mAxisSelectedCircleSize, paint);
             }
 
@@ -420,9 +436,12 @@ class ChartView extends View {
             } else {
                 translateValue = mTouchXValue + INFO_PANEL_SHIFT;
             }
+            mLastInfoPanelPositionX = translateValue;
             canvas.translate(translateValue, INFO_PANEL_SHIFT);
             mInfoPanelViewHolder.mInfoView.draw(canvas);
             canvas.restore();
+        } else {
+            mLastInfoPanelPositionX = -1;
         }
     }
 
@@ -444,11 +463,12 @@ class ChartView extends View {
             if (i > 0) {
                 y += (animDirection * (lineToggleProgress - 1) * yDistance) * i;
             }
+            y -= mSideMargin;
             if (mLastMaxPossibleYever != maxPossibleYever && i > 0) {
                 mAxisTextPaint.setAlpha((int) ((lineToggleProgress) * 255));
                 mAxisPaint.setAlpha((int) ((lineToggleProgress) * MAX_AXIS_ALPHA));
             }
-            canvas.drawLine(mSideMargin, y, getWidth() - mSideMargin, y, mAxisPaint);
+            canvas.drawLine(mSideMargin, y, getWidth() + mSideMargin, y, mAxisPaint);
             canvas.drawText(Utils.coolFormat(yAxisStep * i), mSideMargin, y - (float) mAxisTextSize / 2, mAxisTextPaint);
             if (mLastMaxPossibleYever != maxPossibleYever) {
                 int yOfPrev = (getHeightWithoutXAxis() - mAxisWidth - yDistance * i);
@@ -456,7 +476,7 @@ class ChartView extends View {
                     yOfPrev += (animDirection * (lineToggleProgress) * yDistance) * i;
                     mAxisTextPaint.setAlpha((int) ((1 - lineToggleProgress) * 255));
                     mAxisPaint.setAlpha((int) ((1 - lineToggleProgress) * MAX_AXIS_ALPHA));
-                    canvas.drawLine(mSideMargin, yOfPrev, getWidth() - mSideMargin, yOfPrev, mAxisPaint);
+                    canvas.drawLine(mSideMargin, yOfPrev, getWidth() + mSideMargin, yOfPrev, mAxisPaint);
                     canvas.drawText(Utils.coolFormat(prevYAxisStep * i), mSideMargin, yOfPrev - (float) mAxisTextSize / 2, mAxisTextPaint);
                 }
             }
@@ -481,13 +501,13 @@ class ChartView extends View {
             x = (firstPointToShow * mStepXForMaxScale - translation) * scale;
             xWithMargin = x + (1 - 2 * x / getWidth()) * mSideMargin;
             mPathPoints[0] = xWithMargin;
-            mPathPoints[1] = getHeightWithoutXAxis() - yData.getValues().get(0) * yStep;
+            mPathPoints[1] = getHeightWithoutXAxis() - yData.getValues().get(0) * yStep + mSideMargin;
 
             int pointIndex = 2;
             for (int i = firstPointToShow + 1; i <= lastPointToShow; i++) {
                 x = (i * mStepXForMaxScale - translation) * scale;
                 xWithMargin = x + (1 - 2 * x / getWidth()) * mSideMargin;
-                y = getHeightWithoutXAxis() - yData.getValues().get(i) * yStep;
+                y = getHeightWithoutXAxis() - yData.getValues().get(i) * yStep + mSideMargin;
                 mPathPoints[pointIndex] = xWithMargin;
                 mPathPoints[pointIndex + 1] = y;
                 mPathPoints[pointIndex + 2] = xWithMargin;
