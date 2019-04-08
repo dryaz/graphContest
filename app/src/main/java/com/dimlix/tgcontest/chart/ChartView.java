@@ -7,6 +7,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.util.Pair;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
@@ -68,6 +69,10 @@ class ChartView extends View {
     private long mStartXAxisAnimTime = -1;
     // Needs to animate chart when user toggle line/
     private long mLastMaxPossibleYever = -1;
+    private long mLastMinPossibleYever = -1;
+
+    private long mLastMaxMinPossibleYeverDiff = -1;
+
     private int mLastXValuesStep = -1;
     private int mPrevLastXValuesStep = -1;
     private int mPrevNextIndexToDraw = -1;
@@ -235,6 +240,7 @@ class ChartView extends View {
                 mChartData.getSize() - 1);
 
         long maxPossibleYever = 0;
+        long minPossibleYever = Integer.MAX_VALUE;
         for (int k = 0; k < mChartData.getYValues().size(); k++) {
             ChartData.YData yData = mChartData.getYValues().get(k);
             if (!yData.isShown()) continue;
@@ -242,6 +248,7 @@ class ChartView extends View {
             for (int i = firstPointToShow; i < lastPointToShow; i++) {
                 Long nextValue = yData.getValues().get(i);
                 if (maxPossibleYever < nextValue) maxPossibleYever = nextValue;
+                if (minPossibleYever > nextValue) minPossibleYever = nextValue;
             }
         }
 
@@ -249,14 +256,25 @@ class ChartView extends View {
             mLastMaxPossibleYever = maxPossibleYever;
         }
 
+        if (mLastMinPossibleYever == -1) {
+            mLastMinPossibleYever = minPossibleYever;
+        }
+
+        mLastMaxMinPossibleYeverDiff = mLastMaxPossibleYever - mLastMinPossibleYever;
+
         if (maxPossibleYever == 0) {
             // Prevent single line from flying up
             maxPossibleYever = mLastMaxPossibleYever;
         }
 
+        if (minPossibleYever == Integer.MAX_VALUE) {
+            // Prevent single line from flying up
+            maxPossibleYever = mLastMinPossibleYever;
+        }
+
         float lineToggleProgress = 1;
         if (mIsAnimationsEnabled
-                && (!mLinesToToggle.isEmpty() || maxPossibleYever != mLastMaxPossibleYever)) {
+                && (!mLinesToToggle.isEmpty() || maxPossibleYever != mLastMaxPossibleYever || minPossibleYever != mLastMinPossibleYever)) {
             if (mStartToggleTime == -1) {
                 mStartToggleTime = System.currentTimeMillis();
             }
@@ -271,16 +289,22 @@ class ChartView extends View {
         float scale = (float) getWidth() / (mRightCurrentXBoarderValue - mLeftCurrentXBoarderValue);
         float translation = mLeftCurrentXBoarderValue;
 
-        float masPossibleYeverComputed =
+        float maxDiffPossibleYeverComputed =
+                mLastMaxMinPossibleYeverDiff + ((maxPossibleYever - minPossibleYever) - mLastMaxMinPossibleYeverDiff) * lineToggleProgress;
+        float maxPossibleYeverComputed =
                 mLastMaxPossibleYever + (maxPossibleYever - mLastMaxPossibleYever) * lineToggleProgress;
-        float yStep = (float) getHeightWithoutXAxis() / masPossibleYeverComputed;
+        float minPossibleYeverComputed =
+                mLastMinPossibleYever + (minPossibleYever - mLastMinPossibleYever) * lineToggleProgress;
+        float yStep = (float) getHeightWithoutXAxis() / maxDiffPossibleYeverComputed;
+
+        Log.e("!@#", "com.dimlix.tgcontest.chart.ChartView.onDraw:295  " + yStep);
 
         drawChartYAxis(canvas, maxPossibleYever, lineToggleProgress);
-        drawChartLines(canvas, firstPointToShow, lastPointToShow, lineToggleProgress, scale, translation, yStep);
+        drawChartLines(canvas, (long) minPossibleYeverComputed, firstPointToShow, lastPointToShow, lineToggleProgress, scale, translation, yStep);
         drawTouchedInfo(canvas, scale, translation, yStep);
 
         float xAxisValuesProgress = drawXAxis(canvas, firstPointToShow, lastPointToShow, scale, translation);
-        loop(maxPossibleYever, lineToggleProgress, xAxisValuesProgress);
+        loop(maxPossibleYever, minPossibleYever, lineToggleProgress, xAxisValuesProgress);
     }
 
     private float drawXAxis(Canvas canvas, int firstPointToShow, int lastPointToShow, float scale, float translation) {
@@ -367,7 +391,7 @@ class ChartView extends View {
         return xAxisValuesProgress;
     }
 
-    private void loop(long maxPossibleYever, float lineToggleProgress, float xAxisValuesProgress) {
+    private void loop(long maxPossibleYever, long minPossibleYever, float lineToggleProgress, float xAxisValuesProgress) {
         // Run draw loop in case animation is running.
         if (lineToggleProgress < 1 || xAxisValuesProgress < 1) {
             invalidate();
@@ -379,8 +403,9 @@ class ChartView extends View {
             if (lineToggleProgress >= 1) {
                 mStartToggleTime = -1;
             }
-            if (!mLinesToToggle.isEmpty() || mLastMaxPossibleYever != maxPossibleYever) {
+            if (!mLinesToToggle.isEmpty() || mLastMaxPossibleYever != maxPossibleYever || mLastMinPossibleYever != minPossibleYever) {
                 mLastMaxPossibleYever = maxPossibleYever;
+                mLastMinPossibleYever = minPossibleYever;
                 mLinesToToggle.clear();
                 invalidate();
             }
@@ -485,7 +510,7 @@ class ChartView extends View {
         }
     }
 
-    private void drawChartLines(Canvas canvas, int firstPointToShow, int lastPointToShow, float lineToggleProgress, float scale, float translation, float yStep) {
+    private void drawChartLines(Canvas canvas, long computedMinPossibleY, int firstPointToShow, int lastPointToShow, float lineToggleProgress, float scale, float translation, float yStep) {
         // Draw chart lines
         float x;
         float xWithMargin;
@@ -503,13 +528,13 @@ class ChartView extends View {
             x = (firstPointToShow * mStepXForMaxScale - translation) * scale;
             xWithMargin = x + (1 - 2 * x / getWidth()) * mSideMargin;
             mPathPoints[0] = xWithMargin;
-            mPathPoints[1] = getHeightWithoutXAxis() - yData.getValues().get(0) * yStep;
+            mPathPoints[1] = getHeightWithoutXAxis() - (yData.getValues().get(0) - computedMinPossibleY) * yStep;
 
             int pointIndex = 2;
             for (int i = firstPointToShow + 1; i <= lastPointToShow; i++) {
                 x = (i * mStepXForMaxScale - translation) * scale;
                 xWithMargin = x + (1 - 2 * x / getWidth()) * mSideMargin;
-                y = getHeightWithoutXAxis() - yData.getValues().get(i) * yStep;
+                y = getHeightWithoutXAxis() - (yData.getValues().get(i) - computedMinPossibleY) * yStep;
                 mPathPoints[pointIndex] = xWithMargin;
                 mPathPoints[pointIndex + 1] = y;
                 mPathPoints[pointIndex + 2] = xWithMargin;
