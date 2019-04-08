@@ -23,9 +23,8 @@ public class JsonGraphReader {
 
     private @interface Type {
         String LINE = "line";
-        String LINE_2_Y = "line";
-        String BAR = "line";
-        String PERCENTAGE = "line";
+        String AREA = "area";
+        String BAR = "bar";
 
         String X = "x";
     }
@@ -37,46 +36,54 @@ public class JsonGraphReader {
         try {
             JSONArray graphArray = new JSONArray(json);
             for (int i = 0; i < graphArray.length(); i++) {
-                ChartData nextChartData = new ChartData();
-                JSONObject chartObject = (JSONObject) graphArray.get(i);
-
-                Map<String, String> types = parseKeyValueSet((JSONObject) chartObject.get(Set.TYPES));
-                Map<String, String> names = parseKeyValueSet((JSONObject) chartObject.get(Set.NAMES));
-                Map<String, String> colors = parseKeyValueSet((JSONObject) chartObject.get(Set.COLORS));
-
-                JSONArray availColumns = (JSONArray) chartObject.get(Set.COLUMNS);
-                for (int j = 0; j < availColumns.length(); j++) {
-                    String chartId = "";
-                    List<Long> chartData = new ArrayList<>();
-                    JSONArray valueSet = (JSONArray) availColumns.get(j);
-                    for (int k = 0; k < valueSet.length(); k++) {
-                        Object nextObj = valueSet.get(k);
-                        if (nextObj instanceof String) {
-                            chartId = (String) nextObj;
-                        } else if (nextObj instanceof Long
-                                || nextObj instanceof Integer) {
-                            chartData.add(((Number) nextObj).longValue());
-                        }
-                    }
-                    String currentType = types.get(chartId);
-                    nextChartData.setType(currentType);
-                    switch (currentType) {
-                        case Type.LINE:
-                            nextChartData.addYValues(new ChartData.YData(chartId,
-                                    names.get(chartId), currentType, colors.get(chartId), chartData));
-                            break;
-                        case Type.X:
-                            nextChartData.setXValues(chartData);
-                            break;
-                    }
-                }
-                data.addChartData(nextChartData);
+                data.addChartData(getChartDataFromJson((JSONObject) graphArray.get(i)));
             }
         } catch (JSONException e) {
             e.printStackTrace();
         }
 
         return data;
+    }
+
+    public ChartData getChartDataFromJson(JSONObject chartObject) throws JSONException {
+        ChartData nextChartData = new ChartData();
+        Map<String, String> types = parseKeyValueSet((JSONObject) chartObject.get(Set.TYPES));
+        Map<String, String> names = parseKeyValueSet((JSONObject) chartObject.get(Set.NAMES));
+        Map<String, String> colors = parseKeyValueSet((JSONObject) chartObject.get(Set.COLORS));
+
+        JSONArray availColumns = (JSONArray) chartObject.get(Set.COLUMNS);
+        for (int j = 0; j < availColumns.length(); j++) {
+            String chartId = "";
+            List<Long> chartData = new ArrayList<>();
+            JSONArray valueSet = (JSONArray) availColumns.get(j);
+            for (int k = 0; k < valueSet.length(); k++) {
+                Object nextObj = valueSet.get(k);
+                if (nextObj instanceof String) {
+                    chartId = (String) nextObj;
+                } else if (nextObj instanceof Long
+                        || nextObj instanceof Integer) {
+                    chartData.add(((Number) nextObj).longValue());
+                }
+            }
+            String currentType = types.get(chartId);
+            switch (currentType) {
+                case Type.BAR:
+                case Type.AREA:
+                case Type.LINE:
+                    nextChartData.addYValues(new ChartData.YData(chartId,
+                            names.get(chartId), currentType, colors.get(chartId), chartData));
+                    break;
+                case Type.X:
+                    nextChartData.setXValues(chartData);
+                    break;
+            }
+        }
+        return nextChartData;
+    }
+
+    public ChartData getChartDataFromJson(String json) throws JSONException {
+        JSONObject chartObject = new JSONObject(json);
+        return getChartDataFromJson(chartObject);
     }
 
     private Map<String, String> parseKeyValueSet(JSONObject objectToParse) throws JSONException {

@@ -293,8 +293,8 @@ class ChartView extends View {
                 mLastMinPossibleYever + (minPossibleYever - mLastMinPossibleYever) * lineToggleProgress;
         float yStep = (float) getHeightWithoutXAxis() / (maxPossibleYeverComputed - minPossibleYeverComputed);
 
-        drawChartYAxis(canvas, maxPossibleYever, minPossibleYever, lineToggleProgress);
         drawChartLines(canvas, (long) minPossibleYeverComputed, firstPointToShow, lastPointToShow, lineToggleProgress, scale, translation, yStep);
+        drawChartYAxis(canvas, maxPossibleYever, minPossibleYever, lineToggleProgress);
         drawTouchedInfo(canvas, (long) minPossibleYeverComputed, scale, translation, yStep);
 
         float xAxisValuesProgress = drawXAxis(canvas, firstPointToShow, lastPointToShow, scale, translation);

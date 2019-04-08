@@ -14,14 +14,33 @@ public class ChartData {
     private static final SimpleDateFormat LONG_DATE_FORMAT = new SimpleDateFormat("dd MMM yyyy", Locale.US);
     private static final SimpleDateFormat EXTENDED_DATE_FORMAT = new SimpleDateFormat("EEE, dd MMM yyyy", Locale.US);
 
-    private String mType;
+    private boolean mPercentage = false;
+    private boolean mStacked = false;
 
-    public String getType() {
-        return mType;
+    private String mName;
+
+    public String getName() {
+        return mName;
     }
 
-    public void setType(String type) {
-        mType = type;
+    public void setName(String name) {
+        mName = name;
+    }
+
+    public boolean isPercentage() {
+        return mPercentage;
+    }
+
+    public void setPercentage(boolean percentage) {
+        mPercentage = percentage;
+    }
+
+    public boolean isStacked() {
+        return mStacked;
+    }
+
+    public void setStacked(boolean stacked) {
+        this.mStacked = stacked;
     }
 
     public void addYValues(YData data) {

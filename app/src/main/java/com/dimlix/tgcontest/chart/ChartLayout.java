@@ -145,6 +145,8 @@ public class ChartLayout extends LinearLayout implements CompoundButton.OnChecke
         mChartView.setChartData(data);
         mChartControlView.setChartData(data);
 
+        mChartTitle.setText(data.getName());
+
         mChartSelectedRange.setText(getContext().getString(R.string.date_range,
                 mData.getXStringValues().get(0).getFullDate(),
                 mData.getXStringValues().get(mData.getSize() - 1).getFullDate()));

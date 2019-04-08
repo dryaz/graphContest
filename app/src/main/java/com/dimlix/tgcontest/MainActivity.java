@@ -1,6 +1,5 @@
 package com.dimlix.tgcontest;
 
-import android.app.Activity;
 import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
@@ -17,14 +16,15 @@ import android.view.WindowManager;
 import android.widget.ScrollView;
 
 import com.dimlix.tgcontest.chart.ChartLayout;
-import com.dimlix.tgcontest.model.GraphData;
+import com.dimlix.tgcontest.model.ChartData;
+
+import org.json.JSONException;
 
 import java.io.IOException;
 import java.io.InputStream;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
-import androidx.core.content.ContextCompat;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -54,14 +54,24 @@ public class MainActivity extends AppCompatActivity {
         mToolbar = findViewById(R.id.toolbar);
         setSupportActionBar(mToolbar);
 
-        // TODO persist data across activity recreations, make graphData parcable
-        GraphData graphData = new JsonGraphReader().getGraphDataFromJson(loadGraphJSONFromAsset());
-        LayoutInflater inflater = LayoutInflater.from(this);
         mContainer = findViewById(R.id.container);
-        for (int i = 0; i < graphData.getChartData().size(); i++) {
+
+        addChartFromFile("graph_1.json", "Followers");
+        addChartFromFile("graph_2.json", "Interactions");
+
+        setSystemBarTheme(false);
+    }
+
+    private void addChartFromFile(String fileName, String chartName) {
+        JsonGraphReader jsonGraphReader = new JsonGraphReader();
+        ChartData chartData = null;
+        try {
+            chartData = jsonGraphReader.getChartDataFromJson(loadChartFromJsonData(fileName));
+            chartData.setName(chartName);
+            LayoutInflater inflater = LayoutInflater.from(this);
             ChartLayout chartView = (ChartLayout) inflater.inflate(R.layout.item_chart, mContainer, false);
             // Need to set ID to restore state (without ID will be the same state for all views)
-            chartView.setId(i);
+            chartView.setId(fileName.hashCode());
             chartView.setListener(new ChartLayout.Listener() {
                 @Override
                 public void onInnerViewTouched() {
@@ -73,11 +83,11 @@ public class MainActivity extends AppCompatActivity {
                     mScrollView.requestDisallowInterceptTouchEvent(false);
                 }
             });
-            chartView.setData(graphData.getChartData().get(i));
+            chartView.setData(chartData);
             mContainer.addView(chartView);
+        } catch (JSONException e) {
+            e.printStackTrace();
         }
-
-        setSystemBarTheme(false);
     }
 
     public final void setSystemBarTheme(final boolean pIsDark) {
@@ -148,10 +158,10 @@ public class MainActivity extends AppCompatActivity {
         super.onSaveInstanceState(outState);
     }
 
-    public String loadGraphJSONFromAsset() {
+    public String loadChartFromJsonData(String assetName) {
         String json;
         try {
-            InputStream is = getAssets().open("chart_data.json");
+            InputStream is = getAssets().open(assetName);
             int size = is.available();
             byte[] buffer = new byte[size];
             is.read(buffer);
