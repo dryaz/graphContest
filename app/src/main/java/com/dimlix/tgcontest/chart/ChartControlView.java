@@ -89,6 +89,7 @@ class ChartControlView extends View {
     private float mYDesisionPos = -1;
     private boolean mDecisionMade = false;
 
+    private int mSideMargin = -1;
     private int mDragZoneRadius = -1;
     private int mDragZoneElementHeight = -1;
     private int mDragZoneElementWidth = -1;
@@ -109,6 +110,7 @@ class ChartControlView extends View {
     }
 
     private void init() {
+        mSideMargin = getContext().getResources().getDimensionPixelSize(R.dimen.side_margin);
         mDragThreshold = getContext().getResources().getDimensionPixelSize(R.dimen.drag_threshold);
         mDragZoneWidth = getContext().getResources().getDimensionPixelSize(R.dimen.drag_zone_width);
         mDragZoneTouchWidth = getContext().getResources().getDimensionPixelSize(R.dimen.drag_zone_touch_width);
@@ -310,6 +312,9 @@ class ChartControlView extends View {
             minPossibleYever = mLastMinPossibleYever;
         }
 
+        float x;
+        float y;
+
         for (int k = 0; k < mChartData.getYValues().size(); k++) {
             float maxPossibleYeverComputed =
                     mLastMaxPossibleYever + (maxPossibleYever - mLastMaxPossibleYever) * progress;
@@ -332,13 +337,18 @@ class ChartControlView extends View {
                 }
             }
             float yStep = (float) getHeight() / (maxPossibleYeverComputed - minPossibleYeverComputed);
-
-            mPathPoints[0] = (firstPointToShow * mStepXForMaxScale - translation) * scale;
-            mPathPoints[1] = getHeight() - (yData.getValues().get(0) - minPossibleYeverComputed) * yStep;
+            x = (firstPointToShow * mStepXForMaxScale - translation) * scale;
+            x = x + (1 - 2 * x / getWidth()) * mSideMargin;
+            mPathPoints[0] = x;
+            y = getHeight() - (yData.getValues().get(0) - minPossibleYeverComputed) * yStep;
+            y = y + (1 - 2 * y / getHeight()) * mDragBoarderHeight;
+            mPathPoints[1] = y;
             int pointIndex = 2;
             for (int i = firstPointToShow + 1; i <= lastPointToShow; i++) {
-                float x = (i * mStepXForMaxScale - translation) * scale;
-                float y = getHeight() - (yData.getValues().get(i) - minPossibleYeverComputed) * yStep;
+                x = (i * mStepXForMaxScale - translation) * scale;
+                x = x + (1 - 2 * x / getWidth()) * mSideMargin;
+                y = getHeight() - (yData.getValues().get(i) - minPossibleYeverComputed) * yStep;
+                y = y + (1 - 2 * y / getHeight()) * mDragBoarderHeight;
                 mPathPoints[pointIndex] = x;
                 mPathPoints[pointIndex + 1] = y;
                 mPathPoints[pointIndex + 2] = x;
@@ -377,8 +387,8 @@ class ChartControlView extends View {
         // Draw left portion of mask
         float leftRight = mMinPos / ChartLayout.MAX_DISCRETE_PROGRESS * getWidth();
         canvas.save();
-        canvas.clipRect(0, 0, leftRight + mDragZoneWidth, getHeight());
-        canvas.drawRoundRect(0, 0, leftRight + mDragZoneRadius + mDragZoneWidth, getHeight(), mDragZoneRadius, mDragZoneRadius, mMaskPaint);
+        canvas.clipRect(0, mDragBoarderHeight, leftRight + mDragZoneWidth, getHeight() - mDragBoarderHeight);
+        canvas.drawRoundRect(0, mDragBoarderHeight, leftRight + mDragZoneRadius + mDragZoneWidth, getHeight() - mDragBoarderHeight, mDragZoneRadius, mDragZoneRadius, mMaskPaint);
         canvas.restore();
 
         // Draw left draggable field
@@ -403,8 +413,8 @@ class ChartControlView extends View {
 
         // Draw right portion of mask
         canvas.save();
-        canvas.clipRect(rightLeft - mDragZoneWidth, 0, getWidth(), getHeight());
-        canvas.drawRoundRect(rightLeft - mDragZoneRadius - mDragZoneWidth, 0, getWidth(), getHeight(), mDragZoneRadius, mDragZoneRadius, mMaskPaint);
+        canvas.clipRect(rightLeft - mDragZoneWidth, mDragBoarderHeight, getWidth() - mDragBoarderHeight, getHeight());
+        canvas.drawRoundRect(rightLeft - mDragZoneRadius - mDragZoneWidth, mDragBoarderHeight, getWidth(), getHeight() - mDragBoarderHeight, mDragZoneRadius, mDragZoneRadius, mMaskPaint);
         canvas.restore();
 
         // Draw right draggable field
