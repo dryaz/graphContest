@@ -13,7 +13,7 @@ public class ChartData {
     private List<Pair<String, String>> mXStringValues = new ArrayList<>();
     private List<YData> mYValues = new ArrayList<>();
     private static final SimpleDateFormat SHORT_DATE_FORMAT = new SimpleDateFormat("MMM dd", Locale.US);
-    private static final SimpleDateFormat LONG_DATE_FORMAT = new SimpleDateFormat("EEE, MMM dd", Locale.US);
+    private static final SimpleDateFormat LONG_DATE_FORMAT = new SimpleDateFormat("EEE, dd MMM yyyy", Locale.US);
 
     private String mType;
 

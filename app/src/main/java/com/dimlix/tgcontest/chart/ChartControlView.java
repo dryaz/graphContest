@@ -6,7 +6,6 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.util.TypedValue;
 import android.view.MotionEvent;
 import android.view.View;
@@ -67,6 +66,7 @@ class ChartControlView extends View {
 
     private Paint mMaskPaint;
     private Paint mDragPaint;
+    private Paint mDragElementPaint;
 
     private int mDragZoneWidth;
     private int mDragBoarderHeight;
@@ -87,6 +87,10 @@ class ChartControlView extends View {
     private float mXDesisionPos = -1;
     private float mYDesisionPos = -1;
     private boolean mDecisionMade = false;
+
+    private int mDragZoneRadius = -1;
+    private int mDragZoneElementHeight = -1;
+    private int mDragZoneElementWidth = -1;
 
     public ChartControlView(Context context) {
         super(context);
@@ -109,6 +113,10 @@ class ChartControlView extends View {
         mDragZoneTouchWidth = getContext().getResources().getDimensionPixelSize(R.dimen.drag_zone_touch_width);
         mDragBoarderHeight = getContext().getResources().getDimensionPixelSize(R.dimen.drag_border_height);
 
+        mDragZoneRadius = getContext().getResources().getDimensionPixelSize(R.dimen.drag_zone_round_radius);
+        mDragZoneElementHeight = getContext().getResources().getDimensionPixelSize(R.dimen.drag_zone_element_height);
+        mDragZoneElementWidth = getContext().getResources().getDimensionPixelSize(R.dimen.drag_zone_element_width);
+
         TypedValue typedValue = new TypedValue();
         Resources.Theme theme = getContext().getTheme();
         theme.resolveAttribute(R.attr.maskColor, typedValue, true);
@@ -121,6 +129,10 @@ class ChartControlView extends View {
         mDragPaint = new Paint();
         mDragPaint.setColor(typedValue.data);
         mDragPaint.setStyle(Paint.Style.FILL);
+
+        mDragElementPaint = new Paint();
+        mDragElementPaint.setColor(Color.WHITE);
+        mDragElementPaint.setStyle(Paint.Style.FILL);
 
         setOnTouchListener(new OnTouchListener() {
             @Override
@@ -352,20 +364,47 @@ class ChartControlView extends View {
 
         // Draw left portion of mask
         float leftRight = mMinPos / ChartLayout.MAX_DISCRETE_PROGRESS * getWidth();
-        canvas.drawRect(0, 0, leftRight, getHeight(), mMaskPaint);
+        canvas.save();
+        canvas.clipRect(0, 0, leftRight + mDragZoneWidth, getHeight());
+        canvas.drawRoundRect(0, 0, leftRight + mDragZoneRadius + mDragZoneWidth, getHeight(), mDragZoneRadius, mDragZoneRadius, mMaskPaint);
+        canvas.restore();
+
         // Draw left draggable field
-        canvas.drawRect(leftRight, 0, leftRight + mDragZoneWidth, getHeight(), mDragPaint);
+        canvas.save();
+        canvas.clipRect(leftRight, 0, leftRight + mDragZoneWidth, getHeight());
+        canvas.drawRoundRect(leftRight, 0, leftRight + mDragZoneWidth * 2, getHeight(), mDragZoneRadius, mDragZoneRadius, mDragPaint);
+        canvas.restore();
+
+        // Draw element on left draggable field
+        float leftElement = leftRight + (mDragZoneWidth - mDragZoneElementWidth) / 2;
+        int topElement = (getHeight() - mDragZoneElementHeight) / 2;
+        canvas.drawRoundRect(leftElement, topElement, leftElement + mDragZoneElementWidth, topElement + mDragZoneElementHeight, mDragZoneRadius, mDragZoneRadius, mDragElementPaint);
+
         // Draw top border
         float rightLeft = mMaxPos / ChartLayout.MAX_DISCRETE_PROGRESS * getWidth();
         canvas.drawRect(leftRight + mDragZoneWidth, 0, rightLeft - mDragZoneWidth,
                 mDragBoarderHeight, mDragPaint);
+
         // Draw bottom border
         canvas.drawRect(leftRight + mDragZoneWidth, getHeight() - mDragBoarderHeight,
                 rightLeft - mDragZoneWidth, getHeight(), mDragPaint);
-        // Draw right draggable field
-        canvas.drawRect(rightLeft - mDragZoneWidth, 0, rightLeft, getHeight(), mDragPaint);
+
         // Draw right portion of mask
-        canvas.drawRect(rightLeft, 0, getWidth(), getHeight(), mMaskPaint);
+        canvas.save();
+        canvas.clipRect(rightLeft - mDragZoneWidth, 0, getWidth(), getHeight());
+        canvas.drawRoundRect(rightLeft - mDragZoneRadius - mDragZoneWidth, 0, getWidth(), getHeight(), mDragZoneRadius, mDragZoneRadius, mMaskPaint);
+        canvas.restore();
+
+        // Draw right draggable field
+        canvas.save();
+        canvas.clipRect(rightLeft - mDragZoneWidth, 0, rightLeft, getHeight());
+        canvas.drawRoundRect(rightLeft - mDragZoneWidth * 2, 0, rightLeft, getHeight(), mDragZoneRadius, mDragZoneRadius, mDragPaint);
+        canvas.restore();
+
+        // Draw element on right draggable field
+        leftElement = rightLeft - (mDragZoneWidth + mDragZoneElementWidth) / 2;
+        topElement = (getHeight() - mDragZoneElementHeight) / 2;
+        canvas.drawRoundRect(leftElement, topElement, leftElement + mDragZoneElementWidth, topElement + mDragZoneElementHeight, mDragZoneRadius, mDragZoneRadius, mDragElementPaint);
     }
 
     public void setChartData(final ChartData data) {

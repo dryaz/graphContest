@@ -15,7 +15,7 @@
         <item name="infoDateTextColor">#000</item>
         <item name="infoBgColor">#ffffff</item>
         <item name="chartDelimeter">#f1f1f2</item>
-        <item name="maskColor">#caf0f0f0</item>
+        <item name="maskColor">#aaf0f0f0</item>
         <item name="maskDragColor">#7f86A9C4</item>
         <item name="checkboxColor">#000</item>
     </style>
@@ -35,7 +35,7 @@
         <item name="infoDateTextColor">#fff</item>
         <item name="infoBgColor">#202b38</item>
         <item name="chartDelimeter">#131c26</item>
-        <item name="maskColor">#ca151e27</item>
+        <item name="maskColor">#7f465765</item>
         <item name="maskDragColor">#7f6F899E</item>
         <item name="checkboxColor">#fff</item>
 

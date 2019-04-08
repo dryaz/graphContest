@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <dimen name="drag_zone_width">8dp</dimen>
+    <dimen name="drag_zone_width">16dp</dimen>
+    <dimen name="drag_zone_round_radius">10dp</dimen>
+    <dimen name="drag_zone_element_height">16dp</dimen>
+    <dimen name="drag_zone_element_width">2dp</dimen>
     <dimen name="drag_zone_touch_width">48dp</dimen>
     <dimen name="drag_border_height">2dp</dimen>
     <dimen name="axis_width">1dp</dimen>

@@ -418,10 +418,10 @@ class ChartView extends View {
                     throw new RuntimeException("There is no color info for " + yData.getVarName());
                 }
                 canvas.drawCircle(xValToDraw,
-                        getHeightWithoutXAxis() - yValue * yStep + mSideMargin,
+                        getHeightWithoutXAxis() - yValue * yStep,
                         mAxisSelectedCircleSize, mTouchedCirclePaint);
                 canvas.drawCircle(xValToDraw,
-                        getHeightWithoutXAxis() - yValue * yStep + mSideMargin,
+                        getHeightWithoutXAxis() - yValue * yStep,
                         mAxisSelectedCircleSize, paint);
             }
 
@@ -466,12 +466,11 @@ class ChartView extends View {
             if (i > 0) {
                 y += (animDirection * (lineToggleProgress - 1) * yDistance) * i;
             }
-            y -= mSideMargin;
             if (mLastMaxPossibleYever != maxPossibleYever && i > 0) {
                 mAxisTextPaint.setAlpha((int) ((lineToggleProgress) * 255));
                 mAxisPaint.setAlpha((int) ((lineToggleProgress) * MAX_AXIS_ALPHA));
             }
-            canvas.drawLine(mSideMargin, y, getWidth() + mSideMargin, y, mAxisPaint);
+            canvas.drawLine(mSideMargin, y, getWidth(), y, mAxisPaint);
             canvas.drawText(Utils.coolFormat(yAxisStep * i), mSideMargin, y - (float) mAxisTextSize / 2, mAxisTextPaint);
             if (mLastMaxPossibleYever != maxPossibleYever) {
                 int yOfPrev = (getHeightWithoutXAxis() - mAxisWidth - yDistance * i);
@@ -504,13 +503,13 @@ class ChartView extends View {
             x = (firstPointToShow * mStepXForMaxScale - translation) * scale;
             xWithMargin = x + (1 - 2 * x / getWidth()) * mSideMargin;
             mPathPoints[0] = xWithMargin;
-            mPathPoints[1] = getHeightWithoutXAxis() - yData.getValues().get(0) * yStep + mSideMargin;
+            mPathPoints[1] = getHeightWithoutXAxis() - yData.getValues().get(0) * yStep;
 
             int pointIndex = 2;
             for (int i = firstPointToShow + 1; i <= lastPointToShow; i++) {
                 x = (i * mStepXForMaxScale - translation) * scale;
                 xWithMargin = x + (1 - 2 * x / getWidth()) * mSideMargin;
-                y = getHeightWithoutXAxis() - yData.getValues().get(i) * yStep + mSideMargin;
+                y = getHeightWithoutXAxis() - yData.getValues().get(i) * yStep;
                 mPathPoints[pointIndex] = xWithMargin;
                 mPathPoints[pointIndex + 1] = y;
                 mPathPoints[pointIndex + 2] = xWithMargin;
