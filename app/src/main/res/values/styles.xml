@@ -32,7 +32,7 @@
         <item name="axisChartColor">#707c8c</item>
         <item name="axisChartCouchedCircleFillColor">#1d2733</item>
         <item name="android:windowBackground">@color/windowBackgroundDark</item>
-        <item name="infoDateTextColor">#e5eff5</item>
+        <item name="infoDateTextColor">#fff</item>
         <item name="infoBgColor">#202b38</item>
         <item name="chartDelimeter">#131c26</item>
         <item name="maskColor">#ca151e27</item>

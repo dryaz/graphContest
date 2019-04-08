@@ -209,6 +209,9 @@ class ChartView extends View {
         mInfoPanelViewHolder.mInfoView.setBackgroundTintList(ColorStateList.valueOf(typedValue.data));
         theme.resolveAttribute(R.attr.infoDateTextColor, typedValue, true);
         mInfoPanelViewHolder.mInfoViewTitle.setTextColor(typedValue.data);
+        for (Pair<TextView, TextView> views : mInfoPanelViewHolder.mLineValue) {
+            views.first.setTextColor(typedValue.data);
+        }
         invalidate();
     }
 
@@ -589,15 +592,13 @@ class ChartView extends View {
             paint.setStrokeWidth(4);
 
             mPaints.put(yData.getVarName(), paint);
-
-            TextView value = (TextView) inflater.inflate(R.layout.item_float_info_panel_value, infoView, false);
-            TextView axisName = (TextView) inflater.inflate(R.layout.item_float_info_panel_title, infoView, false);
+            ViewGroup viewGroup = (ViewGroup) inflater.inflate(R.layout.item_float_info_panel, infoView, false);
+            TextView value = viewGroup.findViewById(R.id.tvValue);
+            TextView axisName = viewGroup.findViewById(R.id.tvAxis);
             value.setTextColor(lineColor);
-            axisName.setTextColor(lineColor);
             axisName.setText(yData.getAlias());
             valueViews.add(Pair.create(axisName, value));
-            infoView.addView(value);
-            infoView.addView(axisName);
+            infoView.addView(viewGroup);
         }
         mInfoPanelViewHolder = new InfoPanelViewHolder(infoView, infoViewTitle, valueViews);
         invalidate();
