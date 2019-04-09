@@ -14,20 +14,13 @@ import java.util.List;
 import java.util.Map;
 
 public class JsonGraphReader {
-    private @interface Set {
+    public @interface Set {
         String COLUMNS = "columns";
         String TYPES = "types";
         String NAMES = "names";
         String COLORS = "colors";
     }
 
-    private @interface Type {
-        String LINE = "line";
-        String AREA = "area";
-        String BAR = "bar";
-
-        String X = "x";
-    }
 
     public GraphData getGraphDataFromJson(String json) {
 
@@ -67,13 +60,13 @@ public class JsonGraphReader {
             }
             String currentType = types.get(chartId);
             switch (currentType) {
-                case Type.BAR:
-                case Type.AREA:
-                case Type.LINE:
+                case ChartData.Type.BAR:
+                case ChartData.Type.AREA:
+                case ChartData.Type.LINE:
                     nextChartData.addYValues(new ChartData.YData(chartId,
                             names.get(chartId), currentType, colors.get(chartId), chartData));
                     break;
-                case Type.X:
+                case ChartData.Type.X:
                     nextChartData.setXValues(chartData);
                     break;
             }

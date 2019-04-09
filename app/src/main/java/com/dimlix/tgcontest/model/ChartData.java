@@ -7,6 +7,14 @@ import java.util.List;
 import java.util.Locale;
 
 public class ChartData {
+    public @interface Type {
+        String LINE = "line";
+        String AREA = "area";
+        String BAR = "bar";
+
+        String X = "x";
+    }
+
     private List<Long> mXValues;
     private List<ChartDates> mXStringValues = new ArrayList<>();
     private List<YData> mYValues = new ArrayList<>();
@@ -101,12 +109,19 @@ public class ChartData {
         private List<Long> mValues;
         private boolean mIsShown = true;
 
+        private boolean mIsBar = false;
+
+        public boolean isBar() {
+            return mIsBar;
+        }
+
         public YData(String varName, String alias, String type, String color, List<Long> values) {
             mVarName = varName;
             mAlias = alias;
             mType = type;
             mColor = color;
             mValues = values;
+            mIsBar = mType.equals(Type.BAR);
         }
 
         public String getVarName() {
