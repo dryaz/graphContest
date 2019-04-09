@@ -268,6 +268,7 @@ class ChartView extends View {
     float[] maxPossibleYeverComputed = null;
     float[] minPossibleYeverComputed = null;
     float[] yStep = null;
+
     // TODO migrate to different renderers for different chart types
     private void drawChartForEachLine(Canvas canvas, int firstPointToShow, int lastPointToShow) {
         if (maxPossibleYever == null) {
@@ -467,7 +468,7 @@ class ChartView extends View {
                     canvas.drawText(Utils.coolFormat(prevYAxisStep * (i) + minPossibleYever[0]), mSideMargin, yOfPrev - (float) mAxisTextSize / 2, mAxisTextFirstPaint);
                 }
             }
-            
+
             // Second part of lines
             if (mChartData.getYValues().get(1).isShown()) {
                 y = (getHeightWithoutXAxis() - mAxisWidth - yDistance * i);
@@ -545,15 +546,22 @@ class ChartView extends View {
     private void drawCompoundChart(Canvas canvas, int firstPointToShow, int lastPointToShow) {
         long maxPossibleYever = 0;
         long minPossibleYever = Integer.MAX_VALUE;
+        long localMaxPossibleYever;
         for (int k = 0; k < mChartData.getYValues().size(); k++) {
+            localMaxPossibleYever = 0;
             ChartData.YData yData = mChartData.getYValues().get(k);
             if (yData.isBar()) minPossibleYever = 0;
             if (!yData.isShown()) continue;
             // Extra iteration over visible fragment needed to find out y scale factor.
             for (int i = firstPointToShow; i < lastPointToShow; i++) {
                 Long nextValue = yData.getValues().get(i);
-                if (maxPossibleYever < nextValue) maxPossibleYever = nextValue;
+                if (localMaxPossibleYever < nextValue) localMaxPossibleYever = nextValue;
                 if (minPossibleYever > nextValue && !yData.isBar()) minPossibleYever = nextValue;
+            }
+            if (mChartData.isStacked()) {
+                maxPossibleYever += localMaxPossibleYever;
+            } else if (localMaxPossibleYever > maxPossibleYever) {
+                maxPossibleYever = localMaxPossibleYever;
             }
         }
 
@@ -598,7 +606,7 @@ class ChartView extends View {
                 mLastMinPossibleYever + (minPossibleYever - mLastMinPossibleYever) * lineToggleProgress;
         float yStep = (float) getHeightWithoutXAxis() / (maxPossibleYeverComputed - minPossibleYeverComputed);
 
-        drawChartLines(canvas, (long) minPossibleYeverComputed, firstPointToShow, lastPointToShow, lineToggleProgress, scale, translation, yStep);
+        drawChartLines(canvas, (long) minPossibleYeverComputed, maxPossibleYever, firstPointToShow, lastPointToShow, lineToggleProgress, scale, translation, yStep);
         drawChartYAxis(canvas, maxPossibleYever, minPossibleYever, lineToggleProgress);
         drawTouchedInfo(canvas, (long) minPossibleYeverComputed, scale, translation, yStep);
 
@@ -811,11 +819,21 @@ class ChartView extends View {
         }
     }
 
-    private void drawChartLines(Canvas canvas, long computedMinPossibleY, int firstPointToShow, int lastPointToShow, float lineToggleProgress, float scale, float translation, float yStep) {
+    boolean isAnimatedLine = false;
+    float prevYStep;
+    float nextYStep;
+    byte direction;
+
+    private void drawChartLines(Canvas canvas, long computedMinPossibleY, long desiredMaxPossibleY,
+                                int firstPointToShow, int lastPointToShow, float lineToggleProgress,
+                                float scale, float translation, float yStep) {
         // Draw chart lines
         float x;
         float xWithMargin;
         float y;
+        prevYStep = (float) getHeightWithoutXAxis() / (desiredMaxPossibleY);
+        nextYStep = (float) getHeightWithoutXAxis() / (mLastMaxPossibleYever);
+        boolean isFirstChart = true;
         for (int k = 0; k < mChartData.getYValues().size(); k++) {
             ChartData.YData yData = mChartData.getYValues().get(k);
 
@@ -834,11 +852,20 @@ class ChartView extends View {
             if (paint == null) {
                 throw new RuntimeException("There is no color info for " + yData.getVarName());
             }
-            if (mLinesToToggle.contains(yData.getVarName())) {
+            if (mLinesToToggle.contains(yData.getVarName()) && !mChartData.isStacked()) {
                 if (yData.isShown()) {
                     paint.setAlpha(Math.min(((int) (255 * lineToggleProgress)), 255));
                 } else {
                     paint.setAlpha(Math.max((int) (255 * (1 - lineToggleProgress)), 0));
+                }
+            }
+
+            isAnimatedLine = mLinesToToggle.contains(yData.getVarName());
+            if (isAnimatedLine) {
+                if (desiredMaxPossibleY > mLastMaxPossibleYever) {
+                    direction = 1;
+                } else {
+                    direction = -1;
                 }
             }
 
@@ -857,16 +884,45 @@ class ChartView extends View {
                     pointIndex += 4;
                 }
             } else {
-                pointIndex = 0;
-                for (int i = firstPointToShow + 1; i <= lastPointToShow; i++) {
-                    x = (i * mStepXForMaxScale - translation) * scale;
-                    xWithMargin = x + (1 - 2 * x / getWidth()) * mSideMargin;
-                    y = getHeightWithoutXAxis() - (yData.getValues().get(i) - computedMinPossibleY) * yStep;
-                    mPathPoints[pointIndex] = xWithMargin;
-                    mPathPoints[pointIndex + 1] = getHeightWithoutXAxis();
-                    mPathPoints[pointIndex + 2] = xWithMargin;
-                    mPathPoints[pointIndex + 3] = y;
-                    pointIndex += 4;
+                if (isFirstChart) {
+                    isFirstChart = false;
+                    pointIndex = 0;
+                    for (int i = firstPointToShow + 1; i <= lastPointToShow; i++) {
+                        x = (i * mStepXForMaxScale - translation) * scale;
+                        xWithMargin = x + (1 - 2 * x / getWidth()) * mSideMargin;
+                        if (isAnimatedLine) {
+                            if (yData.isShown()) {
+                                y = getHeightWithoutXAxis() - (yData.getValues().get(i) - computedMinPossibleY) * prevYStep * lineToggleProgress;
+                            } else {
+                                y = getHeightWithoutXAxis() - (yData.getValues().get(i) - computedMinPossibleY) * nextYStep * (1 - lineToggleProgress);
+                            }
+                        } else {
+                            y = getHeightWithoutXAxis() - (yData.getValues().get(i) - computedMinPossibleY) * yStep;
+                        }
+                        mPathPoints[pointIndex] = xWithMargin;
+                        mPathPoints[pointIndex + 1] = getHeightWithoutXAxis();
+                        mPathPoints[pointIndex + 2] = xWithMargin;
+                        mPathPoints[pointIndex + 3] = y;
+                        pointIndex += 4;
+                    }
+                } else {
+                    pointIndex = 0;
+                    float shift;
+                    for (int i = firstPointToShow + 1; i <= lastPointToShow; i++) {
+                        if (isAnimatedLine) {
+                            if (yData.isShown()) {
+                                y = getHeightWithoutXAxis() - (yData.getValues().get(i) - computedMinPossibleY) * prevYStep * lineToggleProgress;
+                            } else {
+                                y = getHeightWithoutXAxis() - (yData.getValues().get(i) - computedMinPossibleY) * nextYStep * (1 - lineToggleProgress);
+                            }
+                        } else {
+                            y = getHeightWithoutXAxis() - (yData.getValues().get(i) - computedMinPossibleY) * yStep;
+                        }
+                        shift = getHeightWithoutXAxis() - mPathPoints[pointIndex + 3];
+                        mPathPoints[pointIndex + 1] = getHeightWithoutXAxis() - shift;
+                        mPathPoints[pointIndex + 3] = y - shift;
+                        pointIndex += 4;
+                    }
                 }
                 paint.setStrokeWidth((float) Math.ceil(mStepXForMaxScale * scale));
             }
