@@ -469,29 +469,46 @@ class ChartControlView extends View {
                 }
             }
             float yStep = (float) getHeight() / (maxPossibleYeverComputed - minPossibleYeverComputed);
-            x = (firstPointToShow * mStepXForMaxScale - translation) * scale;
-            x = x + (1 - 2 * x / getWidth()) * mSideMargin;
-            mPathPoints[0] = x;
-            y = getHeight() - (yData.getValues().get(0) - minPossibleYeverComputed) * yStep;
-            y = y + (1 - 2 * y / getHeight()) * mDragBoarderHeight;
-            mPathPoints[1] = y;
-            int pointIndex = 2;
-            for (int i = firstPointToShow + 1; i <= lastPointToShow; i++) {
-                x = (i * mStepXForMaxScale - translation) * scale;
-                x = x + (1 - 2 * x / getWidth()) * mSideMargin;
-                y = getHeight() - (yData.getValues().get(i) - minPossibleYeverComputed) * yStep;
-                y = y + (1 - 2 * y / getHeight()) * mDragBoarderHeight;
-                mPathPoints[pointIndex] = x;
-                mPathPoints[pointIndex + 1] = y;
-                mPathPoints[pointIndex + 2] = x;
-                mPathPoints[pointIndex + 3] = y;
-                pointIndex += 4;
-            }
 
             Paint paint = mPaints.get(yData.getVarName());
             if (paint == null) {
                 throw new RuntimeException("There is no color info for " + yData.getVarName());
             }
+            int pointIndex;
+            if (!yData.isBar()) {
+                x = (firstPointToShow * mStepXForMaxScale - translation) * scale;
+                x = x + (1 - 2 * x / getWidth()) * mSideMargin;
+                mPathPoints[0] = x;
+                y = getHeight() - (yData.getValues().get(0) - minPossibleYeverComputed) * yStep;
+                y = y + (1 - 2 * y / getHeight()) * mDragBoarderHeight;
+                mPathPoints[1] = y;
+                pointIndex = 2;
+                for (int i = firstPointToShow + 1; i <= lastPointToShow; i++) {
+                    x = (i * mStepXForMaxScale - translation) * scale;
+                    x = x + (1 - 2 * x / getWidth()) * mSideMargin;
+                    y = getHeight() - (yData.getValues().get(i) - minPossibleYeverComputed) * yStep;
+                    y = y + (1 - 2 * y / getHeight()) * mDragBoarderHeight;
+                    mPathPoints[pointIndex] = x;
+                    mPathPoints[pointIndex + 1] = y;
+                    mPathPoints[pointIndex + 2] = x;
+                    mPathPoints[pointIndex + 3] = y;
+                    pointIndex += 4;
+                }
+            } else {
+                pointIndex = 0;
+                for (int i = firstPointToShow + 1; i <= lastPointToShow; i++) {
+                    x = (i * mStepXForMaxScale - translation) * scale;
+                    x = x + (1 - 2 * x / getWidth()) * mSideMargin;
+                    y = getHeight() - (yData.getValues().get(i) - minPossibleYeverComputed) * yStep;
+                    y = y + (1 - 2 * y / getHeight()) * mDragBoarderHeight;
+                    mPathPoints[pointIndex] = x;
+                    mPathPoints[pointIndex + 1] = getHeight() - mDragBoarderHeight;
+                    mPathPoints[pointIndex + 2] = x;
+                    mPathPoints[pointIndex + 3] = y;
+                    pointIndex += 4;
+                }
+            }
+
 
             if (mLinesToToggle.contains(yData.getVarName())) {
                 if (yData.isShown()) {
