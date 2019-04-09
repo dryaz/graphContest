@@ -858,6 +858,8 @@ class ChartView extends View {
                 } else {
                     paint.setAlpha(Math.max((int) (255 * (1 - lineToggleProgress)), 0));
                 }
+            } else {
+                paint.setAlpha(255);
             }
 
             isAnimatedLine = mLinesToToggle.contains(yData.getVarName());
@@ -924,7 +926,7 @@ class ChartView extends View {
                         pointIndex += 4;
                     }
                 }
-                paint.setStrokeWidth((float) Math.ceil(mStepXForMaxScale * scale));
+                paint.setStrokeWidth((float) Math.ceil(mStepXForMaxScale * scale) + 1);
             }
 
 

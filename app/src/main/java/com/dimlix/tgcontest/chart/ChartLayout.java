@@ -172,36 +172,38 @@ public class ChartLayout extends LinearLayout implements CompoundButton.OnChecke
         Resources.Theme theme = getContext().getTheme();
         theme.resolveAttribute(R.attr.bgChartColor, typedValue, true);
 
-        for (ChartData.YData yData : data.getYValues()) {
+        if (data.getYValues().size() > 1) {
+            for (ChartData.YData yData : data.getYValues()) {
 
-            int colorsSolid[] = {Color.parseColor(yData.getColor()), typedValue.data};
-            int colorsStroke[] = {Color.TRANSPARENT, Color.parseColor(yData.getColor())};
-            int colorsText[] = {Color.WHITE, Color.parseColor(yData.getColor())};
+                int colorsSolid[] = {Color.parseColor(yData.getColor()), typedValue.data};
+                int colorsStroke[] = {Color.TRANSPARENT, Color.parseColor(yData.getColor())};
+                int colorsText[] = {Color.WHITE, Color.parseColor(yData.getColor())};
 
-            Chip checkbox = new Chip(getContext());
-            checkbox.setChipStartPaddingResource(R.dimen.side_margin);
-            checkbox.setChipEndPaddingResource(R.dimen.side_margin);
-            checkbox.setLayoutParams(params);
-            checkbox.setCheckable(true);
-            checkbox.setClickable(true);
-            checkbox.setFocusable(true);
-            checkbox.setTypeface(null, Typeface.BOLD);
-            checkbox.setShapeAppearanceModel(shapeModel);
-            checkbox.setTextColor(new ColorStateList(states, colorsText));
-            checkbox.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
-            checkbox.setChipStrokeWidth(4);
-            checkbox.setChipStrokeColor(new ColorStateList(states, colorsStroke));
-            checkbox.setCheckedIconResource(R.drawable.ic_done_white_24dp);
-            mChartCheckboxes.put(yData.getVarName(), checkbox);
-            checkbox.setChipBackgroundColor(new ColorStateList(states, colorsSolid));
-            checkbox.setText(yData.getAlias());
-            checkbox.setChecked(true);
-            checkbox.setTag(yData.getVarName());
-            checkbox.setOnCheckedChangeListener(this);
+                Chip checkbox = new Chip(getContext());
+                checkbox.setChipStartPaddingResource(R.dimen.side_margin);
+                checkbox.setChipEndPaddingResource(R.dimen.side_margin);
+                checkbox.setLayoutParams(params);
+                checkbox.setCheckable(true);
+                checkbox.setClickable(true);
+                checkbox.setFocusable(true);
+                checkbox.setTypeface(null, Typeface.BOLD);
+                checkbox.setShapeAppearanceModel(shapeModel);
+                checkbox.setTextColor(new ColorStateList(states, colorsText));
+                checkbox.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
+                checkbox.setChipStrokeWidth(4);
+                checkbox.setChipStrokeColor(new ColorStateList(states, colorsStroke));
+                checkbox.setCheckedIconResource(R.drawable.ic_done_white_24dp);
+                mChartCheckboxes.put(yData.getVarName(), checkbox);
+                checkbox.setChipBackgroundColor(new ColorStateList(states, colorsSolid));
+                checkbox.setText(yData.getAlias());
+                checkbox.setChecked(true);
+                checkbox.setTag(yData.getVarName());
+                checkbox.setOnCheckedChangeListener(this);
 
-            checkbox.setOnLongClickListener(this);
+                checkbox.setOnLongClickListener(this);
 
-            mChipGroup.addView(checkbox);
+                mChipGroup.addView(checkbox);
+            }
         }
     }
 
@@ -299,7 +301,10 @@ public class ChartLayout extends LinearLayout implements CompoundButton.OnChecke
         int states[][] = {{android.R.attr.state_selected}, {}};
         for (ChartData.YData yData : mData.getYValues()) {
             int colorsSolid[] = {Color.parseColor(yData.getColor()), typedValue.data};
-            mChartCheckboxes.get(yData.getVarName()).setChipBackgroundColor(new ColorStateList(states, colorsSolid));
+            Chip chip = mChartCheckboxes.get(yData.getVarName());
+            if (chip != null) {
+                chip.setChipBackgroundColor(new ColorStateList(states, colorsSolid));
+            }
         }
 
         theme.resolveAttribute(android.R.attr.textColorPrimary, typedValue, true);
