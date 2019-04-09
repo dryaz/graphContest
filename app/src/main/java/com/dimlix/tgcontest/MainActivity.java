@@ -59,6 +59,9 @@ public class MainActivity extends AppCompatActivity {
 
         addChartFromFile("graph_1.json", "Followers");
         addChartFromFile("graph_2.json", "Interactions");
+        addChartFromFile("graph_3.json", "Fruits");
+        addChartFromFile("graph_4.json", "Views");
+        addChartFromFile("graph_5.json", "Fruits");
 
 
 
