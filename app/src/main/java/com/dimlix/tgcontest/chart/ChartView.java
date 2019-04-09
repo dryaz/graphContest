@@ -215,8 +215,13 @@ class ChartView extends View {
         mInfoPanelViewHolder.mInfoView.setBackgroundTintList(ColorStateList.valueOf(typedValue.data));
         theme.resolveAttribute(R.attr.infoDateTextColor, typedValue, true);
         mInfoPanelViewHolder.mInfoViewTitle.setTextColor(typedValue.data);
+        int counter = 0;
         for (Pair<TextView, TextView> views : mInfoPanelViewHolder.mLineValue) {
             views.first.setTextColor(typedValue.data);
+            counter++;
+            if (mChartData.isStacked() && counter == mInfoPanelViewHolder.mLineValue.size()) {
+                views.second.setTextColor(typedValue.data);
+            }
         }
         invalidate();
     }
@@ -719,6 +724,7 @@ class ChartView extends View {
             float x = (nearestIndexTouched * mStepXForMaxScale - translation) * scale;
             float xValToDraw = x + (1 - 2 * x / getWidth()) * mSideMargin;
             canvas.drawLine(xValToDraw, 0, xValToDraw, getHeightWithoutXAxis() - mAxisWidth, mAxisPaint);
+            long total = 0;
             for (int k = 0; k < mChartData.getYValues().size(); k++) {
                 ChartData.YData yData = mChartData.getYValues().get(k);
                 Pair<TextView, TextView> tvPair = mInfoPanelViewHolder.mLineValue.get(k);
@@ -728,6 +734,7 @@ class ChartView extends View {
                     tvPair.second.setVisibility(GONE);
                     continue;
                 } else {
+                    total += yValue;
                     tvPair.first.setVisibility(VISIBLE);
                     tvPair.second.setVisibility(VISIBLE);
                     tvPair.second.setText(Utils.prettyFormat(yValue));
@@ -742,6 +749,10 @@ class ChartView extends View {
                 canvas.drawCircle(xValToDraw,
                         getHeightWithoutXAxis() - (yValue - minPossibleComputed) * yStep,
                         mAxisSelectedCircleSize, paint);
+            }
+
+            if (mChartData.isStacked()) {
+                mInfoPanelViewHolder.mLineValue.get(mInfoPanelViewHolder.mLineValue.size() - 1).second.setText(Utils.prettyFormat(total));
             }
 
             mInfoPanelViewHolder.mInfoViewTitle.setText(mChartData.getXStringValues().get(nearestIndexTouched).getExtendedDate());
@@ -944,6 +955,15 @@ class ChartView extends View {
             TextView axisName = viewGroup.findViewById(R.id.tvAxis);
             value.setTextColor(lineColor);
             axisName.setText(yData.getAlias());
+            valueViews.add(Pair.create(axisName, value));
+            infoView.addView(viewGroup);
+        }
+
+        if (mChartData.isStacked()) {
+            ViewGroup viewGroup = (ViewGroup) inflater.inflate(R.layout.item_float_info_panel, infoView, false);
+            TextView value = viewGroup.findViewById(R.id.tvValue);
+            TextView axisName = viewGroup.findViewById(R.id.tvAxis);
+            axisName.setText(getContext().getString(R.string.all));
             valueViews.add(Pair.create(axisName, value));
             infoView.addView(viewGroup);
         }

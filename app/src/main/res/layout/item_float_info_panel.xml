@@ -21,6 +21,7 @@
         android:layout_height="wrap_content"
         android:layout_gravity="end"
         android:gravity="end"
+        android:textColor="?infoDateTextColor"
         android:textSize="14sp"
         android:textStyle="bold"
         tools:text="11 234 123"/>
