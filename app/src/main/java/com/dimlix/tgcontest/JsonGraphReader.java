@@ -43,22 +43,39 @@ public class JsonGraphReader {
         Map<String, String> types = parseKeyValueSet((JSONObject) chartObject.get(Set.TYPES));
         Map<String, String> names = parseKeyValueSet((JSONObject) chartObject.get(Set.NAMES));
         Map<String, String> colors = parseKeyValueSet((JSONObject) chartObject.get(Set.COLORS));
+        List<Long> totalValues = null;
+        boolean fillFirstLine = false;
 
         JSONArray availColumns = (JSONArray) chartObject.get(Set.COLUMNS);
         for (int j = 0; j < availColumns.length(); j++) {
             String chartId = "";
             List<Long> chartData = new ArrayList<>();
             JSONArray valueSet = (JSONArray) availColumns.get(j);
+            if (totalValues == null) {
+                totalValues = new ArrayList<>(valueSet.length());
+            }
+            int index = 0;
+            String currentType = null;
             for (int k = 0; k < valueSet.length(); k++) {
                 Object nextObj = valueSet.get(k);
                 if (nextObj instanceof String) {
                     chartId = (String) nextObj;
+                    currentType = types.get(chartId);
                 } else if (nextObj instanceof Long
                         || nextObj instanceof Integer) {
-                    chartData.add(((Number) nextObj).longValue());
+                    long value = ((Number) nextObj).longValue();
+                    if (currentType != null && !currentType.equals(ChartData.Type.X)) {
+                        if (!fillFirstLine) {
+                            totalValues.add(value);
+                        } else {
+                            totalValues.set(index, totalValues.get(index) + value);
+                        }
+                        index++;
+                    }
+                    chartData.add(value);
                 }
             }
-            String currentType = types.get(chartId);
+            fillFirstLine = !totalValues.isEmpty();
             switch (currentType) {
                 case ChartData.Type.BAR:
                 case ChartData.Type.AREA:
@@ -71,6 +88,7 @@ public class JsonGraphReader {
                     break;
             }
         }
+        nextChartData.setSums(totalValues);
         nextChartData.setDoubleYAxis(chartObject.has("y_scaled") && chartObject.getBoolean("y_scaled"));
         nextChartData.setStacked(chartObject.has("stacked") && chartObject.getBoolean("stacked"));
         nextChartData.setPercentage(chartObject.has("percentage") && chartObject.getBoolean("percentage"));
