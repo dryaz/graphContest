@@ -239,7 +239,7 @@ class ChartView extends View {
         for (Pair<TextView, TextView> views : mInfoPanelViewHolder.mLineValue) {
             views.first.setTextColor(typedValue.data);
             counter++;
-            if (mChartData.isStacked() && counter == mInfoPanelViewHolder.mLineValue.size()) {
+            if (mChartData.isStacked() && counter == mInfoPanelViewHolder.mLineValue.size() && !mChartData.isPercentage()) {
                 views.second.setTextColor(typedValue.data);
             }
         }

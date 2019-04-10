@@ -7,7 +7,6 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.util.TypedValue;
 import android.view.MotionEvent;
 import android.view.View;
@@ -692,7 +691,7 @@ class ChartControlView extends View {
                 if (mChartData.getYValues().get(firstShownIndex).isShown()) {
                     y = (float) mChartData.getYValues().get(firstShownIndex).getValues().get(i) / valueToCompute * lineToggleProgress;
                 } else {
-                    y = (float) mChartData.getYValues().get(firstShownIndex).getValues().get(i) / valueToCompute * (1-lineToggleProgress);
+                    y = (float) mChartData.getYValues().get(firstShownIndex).getValues().get(i) / valueToCompute * (1 - lineToggleProgress);
                 }
             } else {
                 y = (float) mChartData.getYValues().get(firstShownIndex).getValues().get(i) / valueToCompute;
@@ -722,7 +721,8 @@ class ChartControlView extends View {
             }
         }
         for (int i = firstShownIndex; i < percentagePath.size(); i++) {
-            if (!mChartData.getYValues().get(i).isShown() && !mLinesToToggle.contains(mChartData.getYValues().get(i).getVarName())) continue;
+            if (!mChartData.getYValues().get(i).isShown() && !mLinesToToggle.contains(mChartData.getYValues().get(i).getVarName()))
+                continue;
             percentagePath.get(i).close();
             for (int j = i + 1; j < percentagePath.size() + 1; j++) {
                 if (mChartData.getYValues().get(j).isShown() || mLinesToToggle.contains(mChartData.getYValues().get(j).getVarName())) {
@@ -796,7 +796,7 @@ class ChartControlView extends View {
 
     private void loop(float lineToggleProgress) {
         // Run draw loop in case animation is running.
-        if (lineToggleProgress < 1 ) {
+        if (lineToggleProgress < 1) {
             invalidate();
         } else {
             if (lineToggleProgress >= 1) {
@@ -850,7 +850,7 @@ class ChartControlView extends View {
 
             paint.setColor(Color.parseColor(yData.getColor()));
             if (mChartData.isPercentage()) {
-                paint.setStyle(Paint.Style.FILL_AND_STROKE);
+                paint.setStyle(Paint.Style.FILL);
             } else {
                 paint.setStyle(Paint.Style.STROKE);
             }
