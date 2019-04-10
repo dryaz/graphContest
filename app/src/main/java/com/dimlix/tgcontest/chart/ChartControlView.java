@@ -5,7 +5,9 @@ import android.content.res.Resources;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.MotionEvent;
 import android.view.View;
@@ -13,8 +15,10 @@ import android.view.View;
 import com.dimlix.tgcontest.R;
 import com.dimlix.tgcontest.model.ChartData;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -295,7 +299,11 @@ class ChartControlView extends View {
         if (mChartData.isDoubleYAxis()) {
             drawChartForEachLine(canvas, progress, scale, translation, firstPointToShow, lastPointToShow);
         } else {
-            drawCompoundChartLines(canvas, progress, scale, translation, firstPointToShow, lastPointToShow);
+            if (mChartData.isPercentage()) {
+                drawPercentageChart(canvas, firstPointToShow, lastPointToShow);
+            } else {
+                drawCompoundChartLines(canvas, progress, scale, translation, firstPointToShow, lastPointToShow);
+            }
         }
     }
 
@@ -418,6 +426,46 @@ class ChartControlView extends View {
                 invalidate();
             }
         }
+    }
+
+    private void drawPercentageChart(Canvas canvas, int firstPointToShow, int lastPointToShow) {
+        boolean fillFirstLine = false;
+        for (int k = 0; k < mChartData.getYValues().size(); k++) {
+            ChartData.YData yData = mChartData.getYValues().get(k);
+            if (!yData.isShown()) continue;
+            // Extra iteration over visible fragment needed to find out y scale factor.
+            for (int i = firstPointToShow; i <= lastPointToShow; i++) {
+                Long nextValue = yData.getValues().get(i);
+                if (!fillFirstLine) {
+                    desiredMaxArray[i] = nextValue;
+                } else {
+                    desiredMaxArray[i] += nextValue;
+                }
+            }
+            fillFirstLine = true;
+        }
+
+        if (lastMaxArray == null) {
+            lastMaxArray = desiredMaxArray.clone();
+        }
+
+        float lineToggleProgress = 1;
+        if (mIsAnimationsEnabled && !mLinesToToggle.isEmpty()) {
+            if (mStartToggleTime == -1) {
+                mStartToggleTime = System.currentTimeMillis();
+            }
+            long elapsed = System.currentTimeMillis() - mStartToggleTime;
+            if (!mLinesToToggle.isEmpty()) {
+                lineToggleProgress = Math.min((float) elapsed / TOGGLE_ANIM_DURATION, 1);
+            }
+        }
+
+        float scale = (float) getWidth() / (mRightCurrentXBoarderValue - mLeftCurrentXBoarderValue);
+        float translation = mLeftCurrentXBoarderValue;
+
+        drawChartLinesPercentage(canvas, firstPointToShow, lastPointToShow, lineToggleProgress, scale, translation);
+        drawControlsOverlay(canvas);
+        loop(lineToggleProgress);
     }
 
     boolean isAnimatedLine = false;
@@ -581,6 +629,111 @@ class ChartControlView extends View {
         loop(maxPossibleYever, minPossibleYever, progress);
     }
 
+    private int getHeightWithoutXAxis() {
+        return getHeight() - mDragBoarderHeight;
+    }
+
+    List<Path> percentagePath;
+    long[] lastMaxArray;
+    long[] desiredMaxArray;
+
+    private void drawChartLinesPercentage(Canvas canvas, int firstPointToShow, int lastPointToShow, float lineToggleProgress,
+                                          float scale, float translation) {
+        // Draw chart lines
+        float x;
+        float xWithMargin;
+        float y;
+        float yToCompute;
+
+        int firstShownIndex = 0;
+        for (int i = 0; i < mChartData.getYValues().size(); i++) {
+            if (mChartData.getYValues().get(i).isShown() || mLinesToToggle.contains(mChartData.getYValues().get(i).getVarName())) {
+                firstShownIndex = i;
+                break;
+            }
+        }
+
+        x = (firstPointToShow * mStepXForMaxScale - translation) * scale;
+        xWithMargin = x + (1 - 2 * x / getWidth()) * mSideMargin;
+        Path p = percentagePath.get(0);
+        p.reset();
+        p.moveTo(xWithMargin, getHeightWithoutXAxis());
+        p.lineTo(xWithMargin, mDragBoarderHeight);
+        x = ((lastPointToShow) * mStepXForMaxScale - translation) * scale;
+        xWithMargin = x + (1 - 2 * x / getWidth()) * mSideMargin;
+        p.lineTo(xWithMargin, mDragBoarderHeight);
+        p.lineTo(xWithMargin, getHeightWithoutXAxis());
+        p.close();
+
+        Paint paint = mPaints.get(mChartData.getYValues().get(firstShownIndex).getVarName());
+
+        canvas.drawPath(p, paint);
+
+        if (firstShownIndex >= percentagePath.size()) {
+            return;
+        }
+
+        x = (firstPointToShow * mStepXForMaxScale - translation) * scale;
+        xWithMargin = x + (1 - 2 * x / getWidth()) * mSideMargin;
+
+        for (int i = 0; i < percentagePath.size(); i++) {
+            percentagePath.get(i).reset();
+            percentagePath.get(i).moveTo(xWithMargin, getHeightWithoutXAxis());
+        }
+
+        for (int i = firstPointToShow; i <= lastPointToShow; i++) {
+            long valueToCompute;
+
+            valueToCompute = (long) (lastMaxArray[i] + (desiredMaxArray[i] - lastMaxArray[i]) * (lineToggleProgress));
+
+            x = (i * mStepXForMaxScale - translation) * scale;
+            xWithMargin = x + (1 - 2 * x / getWidth()) * mSideMargin;
+            if (mLinesToToggle.contains(mChartData.getYValues().get(firstShownIndex).getVarName())) {
+                if (mChartData.getYValues().get(firstShownIndex).isShown()) {
+                    y = (float) mChartData.getYValues().get(firstShownIndex).getValues().get(i) / valueToCompute * lineToggleProgress;
+                } else {
+                    y = (float) mChartData.getYValues().get(firstShownIndex).getValues().get(i) / valueToCompute * (1-lineToggleProgress);
+                }
+            } else {
+                y = (float) mChartData.getYValues().get(firstShownIndex).getValues().get(i) / valueToCompute;
+            }
+            y = mDragBoarderHeight + (getHeight() - 2 * mDragBoarderHeight) * y;
+            percentagePath.get(firstShownIndex).lineTo(xWithMargin, y);
+            for (int k = firstShownIndex + 1; k < mChartData.getYValues().size() - 1; k++) {
+                ChartData.YData yData = mChartData.getYValues().get(k);
+                if (!yData.isShown() && !mLinesToToggle.contains(yData.getVarName())) continue;
+                if (mLinesToToggle.contains(yData.getVarName())) {
+                    if (yData.isShown()) {
+                        yToCompute = (float) yData.getValues().get(i) / valueToCompute * lineToggleProgress;
+                    } else {
+                        yToCompute = (float) yData.getValues().get(i) / valueToCompute * (1 - lineToggleProgress);
+                    }
+                } else {
+                    yToCompute = (float) yData.getValues().get(i) / valueToCompute;
+                }
+                y += (getHeight() - 2 * mDragBoarderHeight) * yToCompute;
+                percentagePath.get(k).lineTo(xWithMargin, y);
+                if (i == lastPointToShow) {
+                    percentagePath.get(k).lineTo(xWithMargin, getHeightWithoutXAxis());
+                }
+            }
+            if (i == lastPointToShow) {
+                percentagePath.get(firstShownIndex).lineTo(xWithMargin, getHeightWithoutXAxis());
+            }
+        }
+        for (int i = firstShownIndex; i < percentagePath.size(); i++) {
+            if (!mChartData.getYValues().get(i).isShown() && !mLinesToToggle.contains(mChartData.getYValues().get(i).getVarName())) continue;
+            percentagePath.get(i).close();
+            for (int j = i + 1; j < percentagePath.size() + 1; j++) {
+                if (mChartData.getYValues().get(j).isShown() || mLinesToToggle.contains(mChartData.getYValues().get(j).getVarName())) {
+                    canvas.drawPath(percentagePath.get(i), mPaints.get(mChartData.getYValues().get(j).getVarName()));
+                    break;
+                }
+            }
+        }
+    }
+
+
     private void drawControlsOverlay(Canvas canvas) {
         // Draw left portion of mask
         float leftRight = mMinPos / ChartLayout.MAX_DISCRETE_PROGRESS * getWidth();
@@ -641,6 +794,24 @@ class ChartControlView extends View {
         }
     }
 
+    private void loop(float lineToggleProgress) {
+        // Run draw loop in case animation is running.
+        if (lineToggleProgress < 1 ) {
+            invalidate();
+        } else {
+            if (lineToggleProgress >= 1) {
+                for (int i = 0; i < lastMaxArray.length; i++) {
+                    lastMaxArray[i] = desiredMaxArray[i];
+                }
+                mStartToggleTime = -1;
+            }
+            if (!mLinesToToggle.isEmpty()) {
+                mLinesToToggle.clear();
+                invalidate();
+            }
+        }
+    }
+
     public void setChartData(final ChartData data) {
 
         if (getWidth() == 0) {
@@ -651,6 +822,14 @@ class ChartControlView extends View {
                 }
             });
             return;
+        }
+
+        lastMaxArray = null;
+        desiredMaxArray = new long[data.getYValues().get(0).getSize()];
+
+        percentagePath = new ArrayList<>(data.getYValues().size() - 1);
+        for (int i = 0; i < data.getYValues().size() - 1; i++) {
+            percentagePath.add(new Path());
         }
 
         if (data.isDoubleYAxis()) {
@@ -670,7 +849,11 @@ class ChartControlView extends View {
             Paint paint = new Paint();
 
             paint.setColor(Color.parseColor(yData.getColor()));
-            paint.setStyle(Paint.Style.STROKE);
+            if (mChartData.isPercentage()) {
+                paint.setStyle(Paint.Style.FILL_AND_STROKE);
+            } else {
+                paint.setStyle(Paint.Style.STROKE);
+            }
             paint.setFlags(Paint.ANTI_ALIAS_FLAG);
             paint.setStrokeWidth(4);
 

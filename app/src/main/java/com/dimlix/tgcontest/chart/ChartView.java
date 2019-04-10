@@ -10,14 +10,12 @@ import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.util.Pair;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.dimlix.tgcontest.R;
@@ -1201,7 +1199,7 @@ class ChartView extends View {
                 if (mChartData.getYValues().get(firstShownIndex).isShown()) {
                     y = (float) mChartData.getYValues().get(firstShownIndex).getValues().get(i) / valueToCompute * lineToggleProgress;
                 } else {
-                    y = (float) mChartData.getYValues().get(firstShownIndex).getValues().get(i) / valueToCompute * (1-lineToggleProgress);
+                    y = (float) mChartData.getYValues().get(firstShownIndex).getValues().get(i) / valueToCompute * (1 - lineToggleProgress);
                 }
             } else {
                 y = (float) mChartData.getYValues().get(firstShownIndex).getValues().get(i) / valueToCompute;
@@ -1221,7 +1219,6 @@ class ChartView extends View {
                     yToCompute = (float) yData.getValues().get(i) / valueToCompute;
                 }
                 y += getHeightWithoutXAxis() * 0.8f * yToCompute;
-                Log.e("!@#", yData.getAlias() + " : " + y);
                 percentagePath.get(k).lineTo(xWithMargin, y);
                 if (i == lastPointToShow) {
                     percentagePath.get(k).lineTo(xWithMargin, getHeightWithoutXAxis());
@@ -1232,7 +1229,8 @@ class ChartView extends View {
             }
         }
         for (int i = firstShownIndex; i < percentagePath.size(); i++) {
-//            if (!mChartData.getYValues().get(i).isShown() && !mLinesToToggle.contains(mChartData.getYValues().get(i).getVarName())) continue;
+            if (!mChartData.getYValues().get(i).isShown() && !mLinesToToggle.contains(mChartData.getYValues().get(i).getVarName()))
+                continue;
             percentagePath.get(i).close();
             for (int j = i + 1; j < percentagePath.size() + 1; j++) {
                 if (mChartData.getYValues().get(j).isShown() || mLinesToToggle.contains(mChartData.getYValues().get(j).getVarName())) {
