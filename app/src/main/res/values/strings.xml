@@ -3,4 +3,5 @@
     <string name="toggle_theme">Toggle theme</string>
     <string name="date_range" formatted="false">%s - %s</string>
     <string name="all">All</string>
+    <string name="percentage">%.2f %%</string>
 </resources>
