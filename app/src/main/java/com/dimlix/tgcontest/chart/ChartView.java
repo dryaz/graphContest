@@ -1176,6 +1176,10 @@ class ChartView extends View {
 
         canvas.drawPath(p, paint);
 
+        if (firstShownIndex >= percentagePath.size()) {
+            return;
+        }
+
         x = (firstPointToShow * mStepXForMaxScale - translation) * scale;
         xWithMargin = x + (1 - 2 * x / getWidth()) * mSideMargin;
 
@@ -1185,15 +1189,21 @@ class ChartView extends View {
         }
 
         for (int i = firstPointToShow; i <= lastPointToShow; i++) {
+            long valueToCompute;
+            if (desiredMaxArray[i] > lastMaxArray[i]) {
+                valueToCompute = desiredMaxArray[i];
+            } else {
+                valueToCompute = lastMaxArray[i];
+            }
             x = (i * mStepXForMaxScale - translation) * scale;
             xWithMargin = x + (1 - 2 * x / getWidth()) * mSideMargin;
-            y = (float) mChartData.getYValues().get(firstShownIndex).getValues().get(i) / lastMaxArray[i];
+            y = (float) mChartData.getYValues().get(firstShownIndex).getValues().get(i) / valueToCompute;
             y = getHeightWithoutXAxis() * 0.2f + getHeightWithoutXAxis() * 0.8f * y;
-            percentagePath.get(0).lineTo(xWithMargin, y);
+            percentagePath.get(firstShownIndex).lineTo(xWithMargin, y);
             for (int k = firstShownIndex + 1; k < mChartData.getYValues().size() - 1; k++) {
                 ChartData.YData yData = mChartData.getYValues().get(k);
                 if (!yData.isShown() && !mLinesToToggle.contains(yData.getVarName())) continue;
-                yToCompute = (float) yData.getValues().get(i) / lastMaxArray[i];
+                yToCompute = (float) yData.getValues().get(i) / valueToCompute;
                 y += getHeightWithoutXAxis() * 0.8f * yToCompute;
                 percentagePath.get(k).lineTo(xWithMargin, y);
                 if (i == lastPointToShow) {
@@ -1201,12 +1211,18 @@ class ChartView extends View {
                 }
             }
             if (i == lastPointToShow) {
-                percentagePath.get(0).lineTo(xWithMargin, getHeightWithoutXAxis());
+                percentagePath.get(firstShownIndex).lineTo(xWithMargin, getHeightWithoutXAxis());
             }
         }
-        for (int i = 0; i < percentagePath.size(); i++) {
+        for (int i = firstShownIndex; i < percentagePath.size(); i++) {
+            if (!mChartData.getYValues().get(i).isShown()) continue;
             percentagePath.get(i).close();
-            canvas.drawPath(percentagePath.get(i), mPaints.get(mChartData.getYValues().get(i + 1).getVarName()));
+            for (int j = i + 1; j < percentagePath.size() + 1; j++) {
+                if (mChartData.getYValues().get(j).isShown()) {
+                    canvas.drawPath(percentagePath.get(i), mPaints.get(mChartData.getYValues().get(j).getVarName()));
+                    break;
+                }
+            }
         }
     }
 
