@@ -10,7 +10,7 @@
         <item name="colorPrimaryDark">@color/colorPrimaryDarkLight</item>
         <item name="bgChartColor">#fff</item>
         <item name="axisChartTextColor">#808a91</item>
-        <item name="axisChartColor">#8e8e93</item>
+        <item name="axisChartColor">#19182d3b</item>
         <item name="axisChartCouchedCircleFillColor">#fff</item>
         <item name="infoDateTextColor">#000</item>
         <item name="infoBgColor">#ffffff</item>
@@ -30,7 +30,7 @@
         <item name="colorPrimaryDark">@color/colorPrimaryDarkDark</item>
         <item name="bgChartColor">@color/colorPrimaryDark</item>
         <item name="axisChartTextColor">#506372</item>
-        <item name="axisChartColor">#707c8c</item>
+        <item name="axisChartColor">#19ffffff</item>
         <item name="axisChartCouchedCircleFillColor">#1d2733</item>
         <item name="android:windowBackground">@color/windowBackgroundDark</item>
         <item name="infoDateTextColor">#fff</item>
