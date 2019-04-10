@@ -10,12 +10,14 @@ import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.util.Pair;
 import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import com.dimlix.tgcontest.R;
@@ -1190,21 +1192,36 @@ class ChartView extends View {
 
         for (int i = firstPointToShow; i <= lastPointToShow; i++) {
             long valueToCompute;
-            if (desiredMaxArray[i] > lastMaxArray[i]) {
-                valueToCompute = desiredMaxArray[i];
-            } else {
-                valueToCompute = lastMaxArray[i];
-            }
+
+            valueToCompute = (long) (lastMaxArray[i] + (desiredMaxArray[i] - lastMaxArray[i]) * (lineToggleProgress));
+
             x = (i * mStepXForMaxScale - translation) * scale;
             xWithMargin = x + (1 - 2 * x / getWidth()) * mSideMargin;
-            y = (float) mChartData.getYValues().get(firstShownIndex).getValues().get(i) / valueToCompute;
+            if (mLinesToToggle.contains(mChartData.getYValues().get(firstShownIndex).getVarName())) {
+                if (mChartData.getYValues().get(firstShownIndex).isShown()) {
+                    y = (float) mChartData.getYValues().get(firstShownIndex).getValues().get(i) / valueToCompute * lineToggleProgress;
+                } else {
+                    y = (float) mChartData.getYValues().get(firstShownIndex).getValues().get(i) / valueToCompute * (1-lineToggleProgress);
+                }
+            } else {
+                y = (float) mChartData.getYValues().get(firstShownIndex).getValues().get(i) / valueToCompute;
+            }
             y = getHeightWithoutXAxis() * 0.2f + getHeightWithoutXAxis() * 0.8f * y;
             percentagePath.get(firstShownIndex).lineTo(xWithMargin, y);
             for (int k = firstShownIndex + 1; k < mChartData.getYValues().size() - 1; k++) {
                 ChartData.YData yData = mChartData.getYValues().get(k);
                 if (!yData.isShown() && !mLinesToToggle.contains(yData.getVarName())) continue;
-                yToCompute = (float) yData.getValues().get(i) / valueToCompute;
+                if (mLinesToToggle.contains(yData.getVarName())) {
+                    if (yData.isShown()) {
+                        yToCompute = (float) yData.getValues().get(i) / valueToCompute * lineToggleProgress;
+                    } else {
+                        yToCompute = (float) yData.getValues().get(i) / valueToCompute * (1 - lineToggleProgress);
+                    }
+                } else {
+                    yToCompute = (float) yData.getValues().get(i) / valueToCompute;
+                }
                 y += getHeightWithoutXAxis() * 0.8f * yToCompute;
+                Log.e("!@#", yData.getAlias() + " : " + y);
                 percentagePath.get(k).lineTo(xWithMargin, y);
                 if (i == lastPointToShow) {
                     percentagePath.get(k).lineTo(xWithMargin, getHeightWithoutXAxis());
@@ -1215,10 +1232,10 @@ class ChartView extends View {
             }
         }
         for (int i = firstShownIndex; i < percentagePath.size(); i++) {
-            if (!mChartData.getYValues().get(i).isShown()) continue;
+//            if (!mChartData.getYValues().get(i).isShown() && !mLinesToToggle.contains(mChartData.getYValues().get(i).getVarName())) continue;
             percentagePath.get(i).close();
             for (int j = i + 1; j < percentagePath.size() + 1; j++) {
-                if (mChartData.getYValues().get(j).isShown()) {
+                if (mChartData.getYValues().get(j).isShown() || mLinesToToggle.contains(mChartData.getYValues().get(j).getVarName())) {
                     canvas.drawPath(percentagePath.get(i), mPaints.get(mChartData.getYValues().get(j).getVarName()));
                     break;
                 }
