@@ -638,7 +638,11 @@ class ChartView extends View {
         }
 
         drawChartLines(canvas, (long) minPossibleYeverComputed, maxPossibleYever, firstPointToShow, lastPointToShow, lineToggleProgress, scale, translation, yStep);
-        drawChartYAxis(canvas, maxPossibleYever, minPossibleYever, lineToggleProgress);
+        if (mChartData.isPercentage()) {
+            drawChartYAxis(canvas);
+        } else {
+            drawChartYAxis(canvas, maxPossibleYever, minPossibleYever, lineToggleProgress);
+        }
         drawTouchedInfo(canvas, (long) minPossibleYeverComputed, scale, translation, yStep);
 
         float xAxisValuesProgress = drawXAxis(canvas, firstPointToShow, lastPointToShow, scale, translation);
@@ -777,7 +781,7 @@ class ChartView extends View {
                 if (paint == null) {
                     throw new RuntimeException("There is no color info for " + yData.getVarName());
                 }
-                if (!yData.isBar()) {
+                if (!yData.isBar() && !mChartData.isPercentage()) {
                     canvas.drawCircle(xValToDraw,
                             getHeightWithoutXAxis() - (yValue - minPossibleComputed) * yStep,
                             mAxisSelectedCircleSize, mTouchedCirclePaint);
@@ -811,6 +815,17 @@ class ChartView extends View {
             canvas.restore();
         } else {
             mLastInfoPanelPositionX = -1;
+        }
+    }
+
+    private void drawChartYAxis(Canvas canvas) {
+        // Draw chart Y axis
+        int yAxisStep = 25;
+        int yDistance = getHeightWithoutXAxis() / 5;
+        for (int i = 0; i < 5; i++) {
+            int y = (getHeightWithoutXAxis() - mAxisWidth - yDistance * i);
+            canvas.drawLine(mSideMargin, y, getWidth() - mSideMargin, y, mAxisPaint);
+            canvas.drawText(String.valueOf(yAxisStep * (i)), mSideMargin, y - (float) mAxisTextSize / 2, mAxisTextPaint);
         }
     }
 
@@ -902,7 +917,7 @@ class ChartView extends View {
                 }
             }
 
-            if (!yData.isBar()) {
+            if (!yData.isBar() && !mChartData.isPercentage()) {
                 mPathPoints[0] = xWithMargin;
                 mPathPoints[1] = getHeightWithoutXAxis() - (yData.getValues().get(0) - computedMinPossibleY) * yStep;
                 pointIndex = 2;
