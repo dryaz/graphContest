@@ -18,6 +18,7 @@
         <item name="maskColor">#aaf0f0f0</item>
         <item name="maskDragColor">#7f86A9C4</item>
         <item name="checkboxColor">#000</item>
+        <item name="isDark">false</item>
     </style>
 
     <style name="AppThemeDark" parent="Theme.MaterialComponents.NoActionBar">
@@ -38,7 +39,7 @@
         <item name="maskColor">#7f465765</item>
         <item name="maskDragColor">#7f6F899E</item>
         <item name="checkboxColor">#fff</item>
-
+        <item name="isDark">true</item>
     </style>
 
 </resources>

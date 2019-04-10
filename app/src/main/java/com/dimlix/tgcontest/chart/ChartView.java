@@ -5,6 +5,8 @@ import android.content.res.ColorStateList;
 import android.content.res.Resources;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.ColorMatrix;
+import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Paint;
 import android.util.AttributeSet;
 import android.util.Pair;
@@ -109,6 +111,7 @@ class ChartView extends View {
 
     private float mLastInfoPanelPositionX = -1;
     private boolean mInTouchPanelBounds = false;
+    private int mNearestIndexTouched = -1;
 
     public ChartView(Context context) {
         super(context);
@@ -125,6 +128,8 @@ class ChartView extends View {
     }
 
     private void init() {
+
+
         mDragThreshold = getContext().getResources().getDimensionPixelSize(R.dimen.drag_threshold);
         mAxisWidth = getContext().getResources().getDimensionPixelSize(R.dimen.axis_width);
         mAxisXHeight = getContext().getResources().getDimensionPixelSize(R.dimen.axis_x_height);
@@ -135,6 +140,20 @@ class ChartView extends View {
 
         TypedValue typedValue = new TypedValue();
         Resources.Theme theme = getContext().getTheme();
+
+        ColorMatrix colorMatrix = new ColorMatrix();
+        theme.resolveAttribute(R.attr.isDark, typedValue, true);
+        if (typedValue.data != 0) {
+            colorMatrix.setSaturation(0.35f);
+        } else {
+            colorMatrix.set(new float[]{
+                    1, 0, 0, 0, 50,
+                    0, 1, 0, 0, 50,
+                    0, 0, 1, 0, 50,
+                    0, 0, 0, 1, 0});
+        }
+        selectedFilter = new ColorMatrixColorFilter(colorMatrix);
+
         theme.resolveAttribute(R.attr.axisChartColor, typedValue, true);
 
         mAxisPaint = new Paint();
@@ -606,6 +625,18 @@ class ChartView extends View {
                 mLastMinPossibleYever + (minPossibleYever - mLastMinPossibleYever) * lineToggleProgress;
         float yStep = (float) getHeightWithoutXAxis() / (maxPossibleYeverComputed - minPossibleYeverComputed);
 
+        float xWithMarginToSearch = mTouchXValue - (1 - 2 * mTouchXValue / getWidth()) * mSideMargin;
+        if (mTouchXValue > 0) {
+            mNearestIndexTouched = Math.round((xWithMarginToSearch / scale + translation) / mStepXForMaxScale);
+            if (mNearestIndexTouched >= mChartData.getSize() - 1) {
+                mNearestIndexTouched = mChartData.getSize() - 1;
+            } else if (mNearestIndexTouched < 0) {
+                mNearestIndexTouched = 0;
+            }
+        } else {
+            mNearestIndexTouched = -1;
+        }
+
         drawChartLines(canvas, (long) minPossibleYeverComputed, maxPossibleYever, firstPointToShow, lastPointToShow, lineToggleProgress, scale, translation, yStep);
         drawChartYAxis(canvas, maxPossibleYever, minPossibleYever, lineToggleProgress);
         drawTouchedInfo(canvas, (long) minPossibleYeverComputed, scale, translation, yStep);
@@ -722,21 +753,16 @@ class ChartView extends View {
     private void drawTouchedInfo(Canvas canvas, long minPossibleComputed, float scale, float translation, float yStep) {
         // Draw info about touched section
         if (mTouchXValue > 0) {
-            float xWithMarginToSearch = mTouchXValue - (1 - 2 * mTouchXValue / getWidth()) * mSideMargin;
-            int nearestIndexTouched = Math.round((xWithMarginToSearch / scale + translation) / mStepXForMaxScale);
-            if (nearestIndexTouched >= mChartData.getSize() - 1) {
-                nearestIndexTouched = mChartData.getSize() - 1;
-            } else if (nearestIndexTouched < 0) {
-                nearestIndexTouched = 0;
-            }
-            float x = (nearestIndexTouched * mStepXForMaxScale - translation) * scale;
+            float x = (mNearestIndexTouched * mStepXForMaxScale - translation) * scale;
             float xValToDraw = x + (1 - 2 * x / getWidth()) * mSideMargin;
-            canvas.drawLine(xValToDraw, 0, xValToDraw, getHeightWithoutXAxis() - mAxisWidth, mAxisPaint);
+            if (!mChartData.getYValues().get(0).isBar()) {
+                canvas.drawLine(xValToDraw, 0, xValToDraw, getHeightWithoutXAxis() - mAxisWidth, mAxisPaint);
+            }
             long total = 0;
             for (int k = 0; k < mChartData.getYValues().size(); k++) {
                 ChartData.YData yData = mChartData.getYValues().get(k);
                 Pair<TextView, TextView> tvPair = mInfoPanelViewHolder.mLineValue.get(k);
-                Long yValue = yData.getValues().get(nearestIndexTouched);
+                Long yValue = yData.getValues().get(mNearestIndexTouched);
                 if (!yData.isShown()) {
                     tvPair.first.setVisibility(GONE);
                     tvPair.second.setVisibility(GONE);
@@ -751,19 +777,21 @@ class ChartView extends View {
                 if (paint == null) {
                     throw new RuntimeException("There is no color info for " + yData.getVarName());
                 }
-                canvas.drawCircle(xValToDraw,
-                        getHeightWithoutXAxis() - (yValue - minPossibleComputed) * yStep,
-                        mAxisSelectedCircleSize, mTouchedCirclePaint);
-                canvas.drawCircle(xValToDraw,
-                        getHeightWithoutXAxis() - (yValue - minPossibleComputed) * yStep,
-                        mAxisSelectedCircleSize, paint);
+                if (!yData.isBar()) {
+                    canvas.drawCircle(xValToDraw,
+                            getHeightWithoutXAxis() - (yValue - minPossibleComputed) * yStep,
+                            mAxisSelectedCircleSize, mTouchedCirclePaint);
+                    canvas.drawCircle(xValToDraw,
+                            getHeightWithoutXAxis() - (yValue - minPossibleComputed) * yStep,
+                            mAxisSelectedCircleSize, paint);
+                }
             }
 
             if (mChartData.isStacked()) {
                 mInfoPanelViewHolder.mLineValue.get(mInfoPanelViewHolder.mLineValue.size() - 1).second.setText(Utils.prettyFormat(total));
             }
 
-            mInfoPanelViewHolder.mInfoViewTitle.setText(mChartData.getXStringValues().get(nearestIndexTouched).getExtendedDate());
+            mInfoPanelViewHolder.mInfoViewTitle.setText(mChartData.getXStringValues().get(mNearestIndexTouched).getExtendedDate());
 
             int widthSpec = MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(ViewGroup.LayoutParams.WRAP_CONTENT), MeasureSpec.UNSPECIFIED);
             int heightSpec = MeasureSpec.makeMeasureSpec(MeasureSpec.getSize(ViewGroup.LayoutParams.WRAP_CONTENT), MeasureSpec.UNSPECIFIED);
@@ -823,6 +851,9 @@ class ChartView extends View {
     float prevYStep;
     float nextYStep;
     byte direction;
+    float lineWidth;
+    ColorMatrixColorFilter selectedFilter;
+    int indexToDrawSelectedAbove = -1;
 
     private void drawChartLines(Canvas canvas, long computedMinPossibleY, long desiredMaxPossibleY,
                                 int firstPointToShow, int lastPointToShow, float lineToggleProgress,
@@ -890,6 +921,9 @@ class ChartView extends View {
                     isFirstChart = false;
                     pointIndex = 0;
                     for (int i = firstPointToShow + 1; i <= lastPointToShow; i++) {
+                        if (i == mNearestIndexTouched) {
+                            indexToDrawSelectedAbove = pointIndex;
+                        }
                         x = (i * mStepXForMaxScale - translation) * scale;
                         xWithMargin = x + (1 - 2 * x / getWidth()) * mSideMargin;
                         if (isAnimatedLine) {
@@ -926,11 +960,20 @@ class ChartView extends View {
                         pointIndex += 4;
                     }
                 }
-                paint.setStrokeWidth((float) Math.ceil(mStepXForMaxScale * scale) + 1);
+
+                paint.setStrokeWidth((mPathPoints[4] - mPathPoints[0]) + 1);
+                if (mNearestIndexTouched >= 0) {
+                    paint.setColorFilter(selectedFilter);
+                } else {
+                    paint.setColorFilter(null);
+                }
             }
 
-
             canvas.drawLines(mPathPoints, 0, pointIndex - 1, paint);
+            paint.setColorFilter(null);
+            if (mNearestIndexTouched >= 0 && indexToDrawSelectedAbove >= 0) {
+                canvas.drawLines(mPathPoints, indexToDrawSelectedAbove, 4, paint);
+            }
         }
     }
 
