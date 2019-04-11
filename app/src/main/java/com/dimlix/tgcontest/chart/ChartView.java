@@ -844,7 +844,7 @@ class ChartView extends View {
             float x = (mNearestIndexTouched * mStepXForMaxScale - translation) * scale;
             float xValToDraw = x + (1 - 2 * x / getWidth()) * mSideMargin;
             if (!mChartData.getYValues().get(0).isBar()) {
-                canvas.drawLine(xValToDraw, 0, xValToDraw, getHeightWithoutXAxis() - mAxisWidth, mAxisPaint);
+                canvas.drawLine(xValToDraw, 0.2f * getHeightWithoutXAxis(), xValToDraw, getHeightWithoutXAxis() - mAxisWidth, mAxisPaint);
             }
             long totalVisible = 0;
             if (mChartData.isPercentage()) {
