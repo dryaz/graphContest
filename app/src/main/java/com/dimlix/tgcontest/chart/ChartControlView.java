@@ -610,10 +610,11 @@ class ChartControlView extends View {
                         pointIndex += 4;
                     }
                 }
+                paint.setStrokeWidth((mPathPoints[4] - mPathPoints[0]) + 1);
             }
 
 
-            if (mLinesToToggle.contains(yData.getVarName())) {
+            if (mLinesToToggle.contains(yData.getVarName()) && !yData.isBar()) {
                 if (yData.isShown()) {
                     paint.setAlpha(Math.min(((int) (255 * progress)), 255));
                 } else {
