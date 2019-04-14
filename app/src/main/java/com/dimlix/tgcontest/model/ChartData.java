@@ -18,7 +18,6 @@ public class ChartData {
     private List<Long> mXValues;
     private List<ChartDates> mXStringValues = new ArrayList<>();
     private List<YData> mYValues = new ArrayList<>();
-    private List<Long> mSums = new ArrayList<>();
     private static final SimpleDateFormat SHORT_DATE_FORMAT = new SimpleDateFormat("dd MMM", Locale.US);
     private static final SimpleDateFormat LONG_DATE_FORMAT = new SimpleDateFormat("dd MMM yyyy", Locale.US);
     private static final SimpleDateFormat EXTENDED_DATE_FORMAT = new SimpleDateFormat("EEE, dd MMM yyyy", Locale.US);
@@ -28,14 +27,6 @@ public class ChartData {
     private boolean mDoubleYAxis;
 
     private String mName;
-
-    public List<Long> getSums() {
-        return mSums;
-    }
-
-    public void setSums(List<Long> sums) {
-        mSums = sums;
-    }
 
     public String getName() {
         return mName;

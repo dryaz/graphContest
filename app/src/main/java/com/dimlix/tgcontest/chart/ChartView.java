@@ -236,7 +236,7 @@ class ChartView extends View {
         theme.resolveAttribute(R.attr.infoDateTextColor, typedValue, true);
         mInfoPanelViewHolder.mInfoViewTitle.setTextColor(typedValue.data);
         int counter = 0;
-        for (Pair<TextView, TextView> views : mInfoPanelViewHolder.mLineValue) {
+        for (LineViewHolder views : mInfoPanelViewHolder.mLineValue) {
             views.first.setTextColor(typedValue.data);
             counter++;
             if (mChartData.isStacked() && counter == mInfoPanelViewHolder.mLineValue.size() && !mChartData.isPercentage()) {
@@ -401,15 +401,13 @@ class ChartView extends View {
             canvas.drawLine(xValToDraw, 0, xValToDraw, getHeightWithoutXAxis() - mAxisWidth, mAxisPaint);
             for (int k = 0; k < mChartData.getYValues().size(); k++) {
                 ChartData.YData yData = mChartData.getYValues().get(k);
-                Pair<TextView, TextView> tvPair = mInfoPanelViewHolder.mLineValue.get(k);
+                LineViewHolder tvPair = mInfoPanelViewHolder.mLineValue.get(k);
                 Long yValue = yData.getValues().get(nearestIndexTouched);
                 if (!yData.isShown()) {
-                    tvPair.first.setVisibility(GONE);
-                    tvPair.second.setVisibility(GONE);
+                    tvPair.parent.setVisibility(GONE);
                     continue;
                 } else {
-                    tvPair.first.setVisibility(VISIBLE);
-                    tvPair.second.setVisibility(VISIBLE);
+                    tvPair.parent.setVisibility(VISIBLE);
                     tvPair.second.setText(Utils.prettyFormat(yValue));
                 }
                 Paint paint = mPaints.get(yData.getVarName());
@@ -847,7 +845,7 @@ class ChartView extends View {
                 canvas.drawLine(xValToDraw, 0.2f * getHeightWithoutXAxis(), xValToDraw, getHeightWithoutXAxis() - mAxisWidth, mAxisPaint);
             }
             long totalVisible = 0;
-            if (mChartData.isPercentage()) {
+            if (mChartData.isStacked() || mChartData.isPercentage()) {
                 for (int k = 0; k < mChartData.getYValues().size(); k++) {
                     ChartData.YData yData = mChartData.getYValues().get(k);
                     Long yValue = yData.getValues().get(mNearestIndexTouched);
@@ -858,15 +856,13 @@ class ChartView extends View {
             }
             for (int k = 0; k < mChartData.getYValues().size(); k++) {
                 ChartData.YData yData = mChartData.getYValues().get(k);
-                Pair<TextView, TextView> tvPair = mInfoPanelViewHolder.mLineValue.get(k);
+                LineViewHolder tvPair = mInfoPanelViewHolder.mLineValue.get(k);
                 Long yValue = yData.getValues().get(mNearestIndexTouched);
                 if (!yData.isShown()) {
-                    tvPair.first.setVisibility(GONE);
-                    tvPair.second.setVisibility(GONE);
+                    tvPair.parent.setVisibility(GONE);
                     continue;
                 } else {
-                    tvPair.first.setVisibility(VISIBLE);
-                    tvPair.second.setVisibility(VISIBLE);
+                    tvPair.parent.setVisibility(VISIBLE);
                     if (mChartData.isPercentage()) {
                         tvPair.second.setText(getContext().getString(R.string.percentage, (float) (100f * yValue / totalVisible)));
                     } else {
@@ -880,7 +876,7 @@ class ChartView extends View {
             }
 
             if (mChartData.isStacked() && !mChartData.isPercentage()) {
-                mInfoPanelViewHolder.mLineValue.get(mInfoPanelViewHolder.mLineValue.size() - 1).second.setText(Utils.prettyFormat(mChartData.getSums().get(mNearestIndexTouched)));
+                mInfoPanelViewHolder.mLineValue.get(mInfoPanelViewHolder.mLineValue.size() - 1).second.setText(Utils.prettyFormat(totalVisible));
             }
 
             mInfoPanelViewHolder.mInfoViewTitle.setText(mChartData.getXStringValues().get(mNearestIndexTouched).getExtendedDate());
@@ -914,17 +910,27 @@ class ChartView extends View {
             if (!mChartData.getYValues().get(0).isBar()) {
                 canvas.drawLine(xValToDraw, 0, xValToDraw, getHeightWithoutXAxis() - mAxisWidth, mAxisPaint);
             }
+
+            long totalVisible = 0;
+            if (mChartData.isStacked() || mChartData.isPercentage()) {
+                for (int k = 0; k < mChartData.getYValues().size(); k++) {
+                    ChartData.YData yData = mChartData.getYValues().get(k);
+                    Long yValue = yData.getValues().get(mNearestIndexTouched);
+                    if (yData.isShown()) {
+                        totalVisible += yValue;
+                    }
+                }
+            }
+
             for (int k = 0; k < mChartData.getYValues().size(); k++) {
                 ChartData.YData yData = mChartData.getYValues().get(k);
-                Pair<TextView, TextView> tvPair = mInfoPanelViewHolder.mLineValue.get(k);
+                LineViewHolder tvPair = mInfoPanelViewHolder.mLineValue.get(k);
                 Long yValue = yData.getValues().get(mNearestIndexTouched);
                 if (!yData.isShown()) {
-                    tvPair.first.setVisibility(GONE);
-                    tvPair.second.setVisibility(GONE);
+                    tvPair.parent.setVisibility(GONE);
                     continue;
                 } else {
-                    tvPair.first.setVisibility(VISIBLE);
-                    tvPair.second.setVisibility(VISIBLE);
+                    tvPair.parent.setVisibility(VISIBLE);
                     tvPair.second.setText(Utils.prettyFormat(yValue));
                 }
                 Paint paint = mPaints.get(yData.getVarName());
@@ -942,7 +948,7 @@ class ChartView extends View {
             }
 
             if (mChartData.isStacked() && !mChartData.isPercentage()) {
-                mInfoPanelViewHolder.mLineValue.get(mInfoPanelViewHolder.mLineValue.size() - 1).second.setText(Utils.prettyFormat(mChartData.getSums().get(mNearestIndexTouched)));
+                mInfoPanelViewHolder.mLineValue.get(mInfoPanelViewHolder.mLineValue.size() - 1).second.setText(Utils.prettyFormat(totalVisible));
             }
 
             mInfoPanelViewHolder.mInfoViewTitle.setText(mChartData.getXStringValues().get(mNearestIndexTouched).getExtendedDate());
@@ -1016,7 +1022,6 @@ class ChartView extends View {
     float prevYStep;
     float nextYStep;
     byte direction;
-    float lineWidth;
     ColorMatrixColorFilter selectedFilter;
     int indexToDrawSelectedAbove = -1;
 
@@ -1311,7 +1316,7 @@ class ChartView extends View {
 
         mChartData = data;
         mPaints.clear();
-        List<Pair<TextView, TextView>> valueViews = new ArrayList<>(mChartData.getYValues().size());
+        List<LineViewHolder> valueViews = new ArrayList<>(mChartData.getYValues().size());
         for (ChartData.YData yData : mChartData.getYValues()) {
             Paint paint = new Paint();
 
@@ -1331,7 +1336,7 @@ class ChartView extends View {
             TextView axisName = viewGroup.findViewById(R.id.tvAxis);
             value.setTextColor(lineColor);
             axisName.setText(yData.getAlias());
-            valueViews.add(Pair.create(axisName, value));
+            valueViews.add(new LineViewHolder(viewGroup, axisName, value));
             infoView.addView(viewGroup);
         }
 
@@ -1340,7 +1345,7 @@ class ChartView extends View {
             TextView value = viewGroup.findViewById(R.id.tvValue);
             TextView axisName = viewGroup.findViewById(R.id.tvAxis);
             axisName.setText(getContext().getString(R.string.all));
-            valueViews.add(Pair.create(axisName, value));
+            valueViews.add(new LineViewHolder(viewGroup, axisName, value));
             infoView.addView(viewGroup);
         }
         mInfoPanelViewHolder = new InfoPanelViewHolder(infoView, infoViewTitle, valueViews);
@@ -1373,12 +1378,24 @@ class ChartView extends View {
     private class InfoPanelViewHolder {
         ViewGroup mInfoView;
         TextView mInfoViewTitle;
-        List<Pair<TextView, TextView>> mLineValue;
+        List<LineViewHolder> mLineValue;
 
-        public InfoPanelViewHolder(ViewGroup infoView, TextView infoViewTitle, List<Pair<TextView, TextView>> lineValue) {
+        public InfoPanelViewHolder(ViewGroup infoView, TextView infoViewTitle, List<LineViewHolder> lineValue) {
             mInfoView = infoView;
             mInfoViewTitle = infoViewTitle;
             mLineValue = lineValue;
+        }
+    }
+    
+    private class LineViewHolder {
+        View parent;
+        TextView first;
+        TextView second;
+
+        public LineViewHolder(View parent, TextView first, TextView second) {
+            this.parent = parent;
+            this.first = first;
+            this.second = second;
         }
     }
 }
